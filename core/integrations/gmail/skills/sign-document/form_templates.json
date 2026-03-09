@@ -1,0 +1,223 @@
+{
+  "berkeley-carroll-wheels": {
+    "match_all": [
+      "Berkeley Carroll School Authorization and Release from Liability",
+      "WHEELS: Exploring the City by Skating and Biking"
+    ],
+    "fields": {
+      "student_name": {
+        "kind": "text",
+        "page": 1,
+        "rect": [236.0, 56.0, 572.0, 76.0],
+        "required": true,
+        "font_size": 11
+      },
+      "guardian_1_name": {
+        "kind": "text",
+        "page": 1,
+        "rect": [236.0, 94.0, 572.0, 114.0],
+        "required": true,
+        "font_size": 11
+      },
+      "guardian_1_home_address": {
+        "kind": "text",
+        "page": 1,
+        "rect": [236.0, 119.0, 572.0, 139.0],
+        "required": true,
+        "font_size": 10
+      },
+      "guardian_1_email": {
+        "kind": "text",
+        "page": 1,
+        "rect": [236.0, 144.0, 572.0, 163.0],
+        "required": true,
+        "font_size": 10
+      },
+      "guardian_1_phone": {
+        "kind": "text",
+        "page": 1,
+        "rect": [236.0, 168.0, 572.0, 187.0],
+        "required": true,
+        "font_size": 10
+      },
+      "guardian_2_name": {
+        "kind": "text",
+        "page": 1,
+        "rect": [236.0, 205.0, 572.0, 224.0],
+        "required": false,
+        "font_size": 11
+      },
+      "guardian_2_home_address": {
+        "kind": "text",
+        "page": 1,
+        "rect": [236.0, 230.0, 572.0, 249.0],
+        "required": false,
+        "font_size": 10
+      },
+      "guardian_2_email": {
+        "kind": "text",
+        "page": 1,
+        "rect": [236.0, 255.0, 572.0, 274.0],
+        "required": false,
+        "font_size": 10
+      },
+      "guardian_2_phone": {
+        "kind": "text",
+        "page": 1,
+        "rect": [236.0, 280.0, 572.0, 298.0],
+        "required": false,
+        "font_size": 10
+      },
+      "guardian_1_signature": {
+        "kind": "signature",
+        "page": 2,
+        "rect": [214.0, 668.0, 372.0, 701.0],
+        "required": true
+      },
+      "guardian_1_signature_date": {
+        "kind": "date",
+        "page": 2,
+        "rect": [414.0, 684.0, 485.0, 701.0],
+        "required": true,
+        "default": "today",
+        "font_size": 10
+      },
+      "guardian_2_signature": {
+        "kind": "signature",
+        "page": 2,
+        "rect": [214.0, 692.0, 372.0, 725.0],
+        "required": false
+      },
+      "guardian_2_signature_date": {
+        "kind": "date",
+        "page": 2,
+        "rect": [414.0, 707.0, 485.0, 724.0],
+        "required": false,
+        "default": "today",
+        "font_size": 10
+      },
+      "student_signature": {
+        "kind": "signature",
+        "page": 2,
+        "rect": [138.0, 716.0, 316.0, 749.0],
+        "required": true
+      },
+      "student_signature_date": {
+        "kind": "date",
+        "page": 2,
+        "rect": [414.0, 732.0, 485.0, 749.0],
+        "required": true,
+        "default": "today",
+        "font_size": 10
+      }
+    }
+  },
+  "substance-skate-park-waiver": {
+    "match_all": [
+      "SKATE PARK LIABILITY WAIVER AND RELEASE OF LIABILITY",
+      "Participant Name:",
+      "Signature of participant using facility"
+    ],
+    "fields": {
+      "participant_name": {
+        "kind": "text",
+        "page": 1,
+        "rect": [153.5, 151.0, 519.6, 170.5],
+        "required": true,
+        "font_size": 11
+      },
+      "street_address": {
+        "kind": "text",
+        "page": 1,
+        "rect": [108.0, 173.5, 519.0, 192.0],
+        "required": true,
+        "font_size": 11
+      },
+      "city": {
+        "kind": "text",
+        "page": 1,
+        "rect": [106.0, 200.5, 294.0, 220.0],
+        "required": true,
+        "font_size": 11
+      },
+      "state": {
+        "kind": "text",
+        "page": 1,
+        "rect": [306.0, 200.5, 433.0, 220.0],
+        "required": true,
+        "font_size": 11
+      },
+      "zip_code": {
+        "kind": "text",
+        "page": 1,
+        "rect": [449.0, 200.5, 515.0, 220.0],
+        "required": true,
+        "font_size": 11
+      },
+      "phone": {
+        "kind": "text",
+        "page": 1,
+        "rect": [107.0, 236.0, 237.0, 255.0],
+        "required": true,
+        "font_size": 10
+      },
+      "email": {
+        "kind": "text",
+        "page": 1,
+        "rect": [318.0, 236.0, 519.0, 255.0],
+        "required": true,
+        "font_size": 10
+      },
+      "participant_printed_name": {
+        "kind": "text",
+        "page": 1,
+        "rect": [72.0, 632.0, 384.0, 651.0],
+        "required": true,
+        "copy_from": "participant_name",
+        "font_size": 11
+      },
+      "participant_dob": {
+        "kind": "text",
+        "page": 1,
+        "rect": [396.0, 632.0, 493.5, 651.0],
+        "required": true,
+        "font_size": 11
+      },
+      "participant_signature": {
+        "kind": "signature",
+        "page": 1,
+        "rect": [90.0, 650.0, 285.0, 687.0],
+        "required": true
+      },
+      "participant_signature_date": {
+        "kind": "date",
+        "page": 1,
+        "rect": [132.0, 702.0, 208.0, 720.0],
+        "required": true,
+        "default": "today",
+        "font_size": 10
+      },
+      "participant_phone_bottom": {
+        "kind": "text",
+        "page": 1,
+        "rect": [353.0, 702.0, 504.0, 720.0],
+        "required": false,
+        "copy_from": "phone",
+        "font_size": 10
+      },
+      "guardian_signature": {
+        "kind": "signature",
+        "page": 2,
+        "rect": [96.0, 194.0, 240.0, 231.0],
+        "required": false
+      },
+      "guardian_license_number": {
+        "kind": "text",
+        "page": 2,
+        "rect": [324.0, 212.0, 499.0, 231.0],
+        "required": false,
+        "font_size": 10
+      }
+    }
+  }
+}
