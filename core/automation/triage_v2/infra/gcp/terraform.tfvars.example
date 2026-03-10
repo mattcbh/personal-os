@@ -1,0 +1,4 @@
+project_id      = "your-gcp-project"
+region          = "us-east1"
+container_image = "us-east1-docker.pkg.dev/your-gcp-project/triage-v2/triage-v2:latest"
+db_password     = "replace-me"

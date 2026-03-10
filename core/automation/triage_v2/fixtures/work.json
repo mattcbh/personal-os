@@ -1,0 +1,38 @@
+[
+  {
+    "message_id": "w-001",
+    "thread_id": "t-work-001",
+    "received_at": "2026-03-03T10:05:00Z",
+    "sender_email": "ap@vendor.com",
+    "sender_name": "Vendor AP",
+    "subject": "Please approve invoice #412",
+    "snippet": "Can you approve this invoice by end of day?",
+    "metadata": {}
+  },
+  {
+    "message_id": "w-002",
+    "thread_id": "t-work-002",
+    "received_at": "2026-03-03T11:10:00Z",
+    "sender_email": "newsletter@industrynews.com",
+    "sender_name": "Industry News",
+    "subject": "Daily Digest",
+    "snippet": "Top restaurant business news.",
+    "list_unsubscribe": "https://industrynews.com/unsubscribe",
+    "metadata": {}
+  },
+  {
+    "message_id": "w-003",
+    "thread_id": "t-work-003",
+    "received_at": "2026-03-03T11:15:00Z",
+    "sender_email": "operations@partner.com",
+    "sender_name": "Operations Partner",
+    "subject": "Project status update",
+    "snippet": "FYI - tracking this for visibility.",
+    "metadata": {
+      "monitor": true,
+      "monitoring_owner": "Operations Partner",
+      "monitoring_deliverable": "Updated vendor schedule",
+      "monitoring_deadline": "2026-03-04"
+    }
+  }
+]

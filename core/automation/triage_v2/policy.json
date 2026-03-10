@@ -1,0 +1,126 @@
+{
+  "priority": {
+    "high_hints": {
+      "gilli": 12000,
+      "brown bag": 12000,
+      "m&a": 12000,
+      "acquisition": 10000,
+      "dagmara": 9000,
+      "abraham": 9000,
+      "park slope": 3200,
+      "pies dos": 3200,
+      "pies n thighs": 3000,
+      "security av/it": 3000,
+      "authorization for final accessories": 3000,
+      "wi-fi park slope": 2800,
+      "jason hershfeld": 1800,
+      "pnt_": 1600,
+      "pnt": 900
+    },
+    "low_hints": {
+      "accepted:": -700,
+      "google meet": -600,
+      "meet.google.com": -600,
+      "creditwise": -500,
+      "linkedin": -450,
+      "cora briefs": -400,
+      "new text message from": -400,
+      "sms": -350,
+      "newsletter": -350
+    },
+    "bucket_bonus": {
+      "Action Needed": 2000,
+      "Monitoring": 1200,
+      "Already Addressed": 700
+    },
+    "domain_bonus": {
+      "@cornerboothholdings.com": 120,
+      "@heapsicecream.com": 90
+    }
+  },
+  "draft": {
+    "automated_sender_hints": [
+      "noreply",
+      "no-reply",
+      "notification",
+      "notifications",
+      "account-services",
+      "inform.bill",
+      "toasttab",
+      "linkedin",
+      "capitalone"
+    ],
+    "courtesy_block_hints": [
+      "invoice",
+      "payment",
+      "subscription",
+      "confirmation",
+      "receipt",
+      "payroll",
+      "statement",
+      "review",
+      "billing"
+    ]
+  },
+  "classification": {
+    "sender_bucket_overrides": {
+      "cora briefs": "Newsletters",
+      "@ramp.com": "FYI",
+      "linkedin": "Spam / Marketing",
+      "amazon": "Spam / Marketing",
+      "compass": "Spam / Marketing",
+      "pef": "Spam / Marketing",
+      "double good": "Spam / Marketing",
+      "grubhub": "Spam / Marketing",
+      "square": "Spam / Marketing"
+    },
+    "editorial_sender_hints": [
+      "on my om",
+      "om malik",
+      "casey newton",
+      "platformer",
+      "matt levine",
+      "money stuff",
+      "one great story",
+      "new york mag",
+      "new york magazine"
+    ],
+    "operational_fyi_sender_hints": [
+      "mail delivery subsystem",
+      "mailer-daemon",
+      "google business profile",
+      "owner.com"
+    ],
+    "promotional_sender_hints": [
+      "linkedin",
+      "amazon",
+      "compass",
+      "pef",
+      "double good",
+      "grubhub",
+      "square"
+    ],
+    "system_alert_spam_keywords": [
+      "new text message from",
+      "never share your",
+      "verification code",
+      "2fa",
+      "google voice",
+      "sign in alert"
+    ]
+  },
+  "render": {
+    "newsletter_sender_priority": [
+      "cora briefs",
+      "on my om",
+      "om malik",
+      "casey newton",
+      "platformer",
+      "matt levine",
+      "money stuff",
+      "one great story",
+      "new york mag",
+      "new york magazine"
+    ]
+  }
+}

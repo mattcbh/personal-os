@@ -1,0 +1,25 @@
+[
+  {
+    "message_id": "p-001",
+    "thread_id": "t-personal-001",
+    "received_at": "2026-03-03T09:00:00Z",
+    "sender_email": "friend@example.com",
+    "sender_name": "Friend",
+    "subject": "Thank you for dinner",
+    "snippet": "Thank you for hosting us last night.",
+    "metadata": {}
+  },
+  {
+    "message_id": "p-002",
+    "thread_id": "t-personal-002",
+    "received_at": "2026-03-03T12:00:00Z",
+    "sender_email": "deals@promo-shop.com",
+    "sender_name": "Promo Shop",
+    "subject": "Limited-time discount",
+    "snippet": "Buy now and save 35%.",
+    "list_unsubscribe": "https://promo-shop.com/unsubscribe",
+    "metadata": {
+      "is_spam": true
+    }
+  }
+]
