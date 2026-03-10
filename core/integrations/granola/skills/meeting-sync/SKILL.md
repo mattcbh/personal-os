@@ -28,7 +28,16 @@ python3 ~/Projects/automation-runtime-personal/core/automation/meeting-sync-fetc
 
 This reads Granola's local cache + `granola-sync.json` and returns unsynced meetings from the last 14 days.
 
-If empty, stop and report "No new meetings found."
+If empty, do a freshness fallback before stopping:
+1. Call `mcp__granola__list_meetings`
+2. Write the raw JSON to `/tmp/granola-meetings-list.json`
+3. Run:
+
+```bash
+python3 ~/Projects/automation-runtime-personal/core/automation/meeting-sync-fetch.py --check-new < /tmp/granola-meetings-list.json
+```
+
+If that is also empty, stop and report "No new meetings found."
 If non-empty, present meetings in a numbered list with title + date and ask whether to:
 - Sync all
 - Select specific
@@ -87,7 +96,7 @@ Do not push directly to Things in this skill. Morning planning reviews `pending-
 
 ## Troubleshooting
 
-- If local precheck fails, fall back to `mcp__granola__list_meetings` + `--check-new`.
+- If local precheck is empty or fails, fall back to `mcp__granola__list_meetings` + `--check-new`.
 - If MCP returns authentication errors for `get_meetings`, verify Granola MCP connectivity first.
 - If transcript API returns empty/not found, keep summary-only file and mark synced.
 - If `--sync` reports failures, report failed meeting IDs and leave those IDs unsynced.
