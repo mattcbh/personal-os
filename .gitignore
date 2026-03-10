@@ -72,6 +72,8 @@ test_*.py
 *.test.py
 .pytest_cache/
 .coverage
+!core/automation/tests/test_*.py
+!core/automation/triage_v2/tests/test_*.py
 
 # MCP/System
 .mcp_cache/
