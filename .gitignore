@@ -6,14 +6,19 @@ things-sync/
 !things-sync/.gitkeep
 BACKLOG.md
 
-# Personal knowledge files
-Knowledge/*.md
+# Personal knowledge files and generated outputs
+Knowledge/**
+!Knowledge/
 !Knowledge/.gitkeep
 !Knowledge/README.md
+brands/
+meetings/
+plans/
+projects/
 
 # Personal configuration
-CLAUDE.md       # If customized from template
-GOALS.md        # Personal goals
+CLAUDE.md
+GOALS.md
 
 # Keep templates and examples
 !CLAUDE_TEMPLATE.md
@@ -57,6 +62,10 @@ env/
 # Logs
 *.log
 logs/
+
+# Runtime state and local generated assets
+core/state/
+core/assets/
 
 # Testing
 test_*.py

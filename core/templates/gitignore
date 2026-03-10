@@ -7,8 +7,18 @@ things-sync/
 BACKLOG.md
 
 # Personal configuration
-AGENTS.md       # If customized from template
-GOALS.md        # Personal goals
+AGENTS.md
+GOALS.md
+
+# Personal knowledge and local planning content
+Knowledge/**
+!Knowledge/
+!Knowledge/.gitkeep
+!Knowledge/README.md
+brands/
+meetings/
+plans/
+projects/
 
 # Keep templates and examples
 !AGENTS_TEMPLATE.md
@@ -35,6 +45,10 @@ env/
 # Logs
 *.log
 logs/
+
+# Runtime state and local generated assets
+core/state/
+core/assets/
 
 # Testing
 test_*.py
