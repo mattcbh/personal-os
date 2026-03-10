@@ -1,0 +1,13 @@
+[project]
+name = "contacts-mcp-server"
+version = "0.1.0"
+description = "MCP server for looking up contact names from phone numbers"
+requires-python = ">=3.12"
+dependencies = ["mcp>=1.0.0"]
+
+[project.scripts]
+contacts-mcp-server = "contacts_mcp_server.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
