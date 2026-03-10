@@ -1,71 +1,93 @@
 ---
 name: meeting-sync
-description: Sync new Granola meetings to local Knowledge folder. Use during morning planning, when user asks "what should I do today", or asks to review/sync meetings.
+description: Sync new Granola meetings to local transcript files and optionally capture follow-up tasks.
 ---
 
 # Meeting Sync
 
-Check for new Granola meetings and offer to sync them to your local Knowledge/Transcripts folder.
+Canonical policy references:
+- `core/policies/paths-and-state.md`
+- `core/policies/scheduling.md`
 
-## Instructions
+## Required Paths
 
-### Step 1: Check for New Meetings
+- Transcript folder: `~/Obsidian/personal-os/Knowledge/TRANSCRIPTS/`
+- Sync state file: `~/Obsidian/personal-os/core/state/granola-sync.json`
+- Pending tasks file: `~/Obsidian/personal-os/core/state/pending-tasks.md`
+- Fast helper script: `~/Projects/automation-runtime-personal/core/automation/meeting-sync-fetch.py`
 
-Call the `check_new_meetings` tool via the Granola MCP to see unsynced meetings.
+## Workflow
 
-### Step 2: Present Results
+### 1) Determine unsynced meetings (fast local precheck)
 
-If new meetings are found, present them to the user:
+Run:
 
+```bash
+python3 ~/Projects/automation-runtime-personal/core/automation/meeting-sync-fetch.py --check-new-local
 ```
-I found X new meeting(s) since your last sync:
 
-1. **Meeting Title** (Date)
-2. **Meeting Title** (Date)
-...
+This reads Granola's local cache + `granola-sync.json` and returns unsynced meetings from the last 14 days.
 
-Add to Knowledge folder?
+If empty, stop and report "No new meetings found."
+If non-empty, present meetings in a numbered list with title + date and ask whether to:
+- Sync all
+- Select specific
+- Skip
+
+### 2) Gather meeting notes/summaries for selected meetings
+
+For each selected meeting:
+1. Call `mcp__granola__get_meetings` with the meeting ID.
+2. Extract:
+   - `id`
+   - `title`
+   - `date` (ISO)
+   - `participants`
+   - `summary` (markdown/notes content)
+3. Build a JSON array of all selected meetings and write it to `/tmp/meetings-to-sync.json`.
+
+### 3) Sync transcripts and write files (fast path)
+
+Run:
+
+```bash
+python3 ~/Projects/automation-runtime-personal/core/automation/meeting-sync-fetch.py --sync < /tmp/meetings-to-sync.json
 ```
 
-### Step 3: Ask User for Selection
+The script handles:
+- Transcript fetch via direct Granola API (much faster than MCP transcript calls)
+- Markdown file writing in `Knowledge/TRANSCRIPTS/`
+- Sync state updates in `core/state/granola-sync.json`
 
-Use AskUserQuestion with these options:
+Parse the JSON report and summarize synced/failed meetings.
 
-| Option | Description |
-|--------|-------------|
-| Sync all | Add all new meetings to Knowledge/Transcripts |
-| Select specific | Let user choose which meetings to sync |
-| Skip for now | Continue without syncing |
+### 4) Extract task candidates
 
-### Step 4: Sync Selected Meetings
+From selected meetings, extract concrete action items from summary content first (and transcript text if needed).
+Show candidates and require explicit selection before writing.
 
-For each meeting the user wants to sync:
-1. Call `sync_meeting_to_local` with the meeting ID
-2. Confirm each sync completed
+For each selected task, append to `core/state/pending-tasks.md` under a meeting section:
 
-### Step 5: Continue with Morning Flow
+```markdown
+## YYYY-MM-DD — Meeting Title
 
-After syncing (or skipping), continue with the normal morning planning workflow:
-- Check tasks
-- Review priorities
-- Suggest focus items for the day
+- [ ] Task description
+- [ ] Another task
+```
 
-## Example Flow
+Do not push directly to Things in this skill. Morning planning reviews `pending-tasks.md`.
 
-**User:** "What should I do today?"
+## Rules
 
-**Claude:**
-1. Calls `check_new_meetings`
-2. "I found 3 new meetings since your last sync..."
-3. Presents AskUserQuestion with sync options
-4. User selects "Sync all" or specific meetings
-5. Syncs selected meetings
-6. "Synced 3 meetings. Now for your day..."
-7. Continues with task planning
+- Do not invent tasks that are not grounded in meeting content.
+- Do not call `mcp__granola__get_meeting_transcript` (slow path).
+- Do not write transcript files manually when the script can do it.
+- Do not read/write `granola-sync.json` manually.
+- Use exact path casing: `Knowledge/TRANSCRIPTS/`.
 
-## Notes
+## Troubleshooting
 
-- Only Granola meetings with notes/content are worth syncing
-- Meetings marked "(no notes)" may be empty placeholders
-- Sync state is tracked in `Knowledge/.granola-sync.json`
-- Files are saved to `Knowledge/Transcripts/` with sanitized filenames
+- If local precheck fails, fall back to `mcp__granola__list_meetings` + `--check-new`.
+- If MCP returns authentication errors for `get_meetings`, verify Granola MCP connectivity first.
+- If transcript API returns empty/not found, keep summary-only file and mark synced.
+- If `--sync` reports failures, report failed meeting IDs and leave those IDs unsynced.
