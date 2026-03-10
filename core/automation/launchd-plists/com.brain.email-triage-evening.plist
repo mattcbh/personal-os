@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.brain.email-triage-evening</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/homeserver/Obsidian/personal-os/core/automation/email-triage.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/homeserver/Obsidian/personal-os</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>15</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/homeserver/Obsidian/personal-os/logs/email-triage-launchd.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/homeserver/Obsidian/personal-os/logs/email-triage-launchd-error.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/Users/homeserver/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>/Users/homeserver</string>
+        <key>USER</key>
+        <string>homeserver</string>
+    </dict>
+</dict>
+</plist>

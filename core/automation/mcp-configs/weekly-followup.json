@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "google": {
+      "command": "gws",
+      "args": ["mcp", "-s", "gmail"],
+      "env": {
+        "GOOGLE_WORKSPACE_CLI_CREDENTIALS_FILE": "/Users/homeserver/.gmail-mcp/gws-authorized-user.json"
+      }
+    },
+    "google-personal": {
+      "command": "gws",
+      "args": ["mcp", "-s", "gmail"],
+      "env": {
+        "GOOGLE_WORKSPACE_CLI_CREDENTIALS_FILE": "/Users/homeserver/.gmail-mcp-personal/gws-authorized-user.json"
+      }
+    }
+  }
+}

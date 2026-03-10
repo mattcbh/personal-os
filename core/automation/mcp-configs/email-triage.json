@@ -1,0 +1,43 @@
+{
+  "mcpServers": {
+    "google": {
+      "command": "gws",
+      "args": ["mcp", "-s", "gmail,calendar"],
+      "env": {
+        "GOOGLE_WORKSPACE_CLI_CREDENTIALS_FILE": "/Users/homeserver/.gmail-mcp/gws-authorized-user.json"
+      }
+    },
+    "google-personal": {
+      "command": "gws",
+      "args": ["mcp", "-s", "gmail,calendar"],
+      "env": {
+        "GOOGLE_WORKSPACE_CLI_CREDENTIALS_FILE": "/Users/homeserver/.gmail-mcp-personal/gws-authorized-user.json"
+      }
+    },
+    "contacts": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/Users/homeserver/mcp-servers/contacts",
+        "run",
+        "--python",
+        "3.12",
+        "contacts-mcp-server"
+      ]
+    },
+    "beeper": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote@0.1.37",
+        "http://localhost:23373/v0/mcp",
+        "--static-oauth-client-metadata",
+        "{\"scope\":\"read write\"}",
+        "--silent"
+      ],
+      "env": {
+        "MCP_REMOTE_CONFIG_DIR": "/Users/homeserver/.mcp-auth"
+      }
+    }
+  }
+}

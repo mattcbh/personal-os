@@ -1,0 +1,88 @@
+{
+  "version": "2026-03-10",
+  "bucket_names": [
+    "Action Needed",
+    "Already Addressed",
+    "Monitoring",
+    "FYI",
+    "Newsletters",
+    "Spam / Marketing"
+  ],
+  "section_order": [
+    "Action Needed",
+    "Already Addressed",
+    "Monitoring",
+    "FYI",
+    "Newsletters",
+    "Spam / Marketing"
+  ],
+  "account_subsections": [
+    "Work",
+    "Personal"
+  ],
+  "link_rules": {
+    "superhuman_url_prefixes": [
+      "https://mail.superhuman.com/matt@cornerboothholdings.com/thread/",
+      "https://mail.superhuman.com/lieber.matt@gmail.com/thread/"
+    ],
+    "action_needed_draft_text": "Draft ready",
+    "action_needed_nodraft_text": "View thread",
+    "fyi_courtesy_text": "Courtesy draft ready",
+    "default_view_text": "View",
+    "newsletter_requires_unsubscribe": true,
+    "spam_requires_unsubscribe": true,
+    "forbid_plain_thread_lines": true,
+    "forbid_unsubscribe_thread_url": true
+  },
+  "dedupe_rules": {
+    "single_entry_per_thread": true,
+    "bucket_priority": [
+      "Action Needed",
+      "Monitoring",
+      "Already Addressed",
+      "FYI",
+      "Newsletters",
+      "Spam / Marketing"
+    ]
+  },
+  "critical_rules": {
+    "fail_on_duplicate_threads": true,
+    "fail_on_malformed_superhuman_links": true,
+    "fail_on_wrong_superhuman_prefix": true,
+    "fail_on_invalid_unsubscribe_links": true,
+    "fail_on_multiple_thread_links_per_entry": true
+  },
+  "quality_rules": {
+    "skip_zero_sections": true,
+    "no_numbered_lists": true,
+    "no_horizontal_rules": true,
+    "no_newsletter_count_summaries": true,
+    "no_spam_count_summaries": true,
+    "fyi_requires_consistent_full_entries": true,
+    "bold_field_labels_when_present": true
+  },
+  "classification_rules": {
+    "list_unsubscribe_alone_is_not_newsletter": true,
+    "reply_only_when_matt_is_responder": true,
+    "sender_overrides_first": true,
+    "newsletter_priority_first": [
+      "Cora Briefs",
+      "On my Om",
+      "Casey Newton",
+      "Matt Levine",
+      "One Great Story / New York Mag"
+    ]
+  },
+  "state_schema": {
+    "triage_required_keys": [
+      "last_triage_timestamp",
+      "processed_message_ids",
+      "last_triage_type",
+      "emails_processed"
+    ],
+    "monitor_required_keys": [
+      "watched_threads",
+      "alerted_ids"
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.brain.project-refresh-evening</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/homeserver/Obsidian/personal-os/core/automation/project-refresh.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/homeserver/Obsidian/personal-os</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>14</integer>
+        <key>Minute</key>
+        <integer>35</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/Users/homeserver/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>/Users/homeserver</string>
+        <key>USER</key>
+        <string>homeserver</string>
+        <key>TRIAGE_V2_PROJECT_REFRESH_PROVIDER</key>
+        <string>claude_cli</string>
+        <key>TRIAGE_V2_PROJECT_REFRESH_MODEL</key>
+        <string>sonnet</string>
+        <key>TRIAGE_V2_PROJECT_REFRESH_TIMEOUT_SECONDS</key>
+        <string>120</string>
+        <key>TRIAGE_V2_PROJECT_REFRESH_BATCH_SIZE</key>
+        <string>8</string>
+        <key>TRIAGE_V2_PROJECT_REFRESH_MAX_SOURCE_ITEMS</key>
+        <string>64</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/homeserver/Obsidian/personal-os/logs/project-refresh-launchd.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/homeserver/Obsidian/personal-os/logs/project-refresh-launchd-error.log</string>
+</dict>
+</plist>
