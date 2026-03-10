@@ -1,37 +1,46 @@
-# Integrations
+# Integrations And Skills Registry
 
-Optional integrations that extend Personal OS with external tools.
+Canonical runtime inventory: `core/architecture/runtime-manifest.yaml`.
 
-## Available Integrations
+## Skills
 
-| Integration | Description | Setup |
-|-------------|-------------|-------|
-| [Granola](./granola/) | Sync meeting notes and transcripts | `Set up Granola integration` |
+| Skill | Integration | Command | Primary Output |
+|---|---|---|---|
+| things-sync | Things | `/things-sync` | Sync markdown tasks with Things 3 |
+| meeting-sync | Granola | `/meeting-sync` | Sync meetings to `Knowledge/TRANSCRIPTS/` |
+| pnt-sync | Notion/Gmail/Beeper/Granola | `/pnt-sync` | Buildout communications + Notion updates |
+| cfo-agent | Supabase | `/cfo-agent` | Weekly/monthly financial analysis |
+| health-scorecard | Supabase | `/health` | Business health summary |
+| chief-of-staff | Gmail | `/cos` | Inbox triage, drafting, scheduling support |
+| sign-document | Gmail | (direct) | Signature + reply workflow |
+| share-doc | Google Drive | (direct) | Markdown to Google Doc publishing |
+| grocery-sort | Apple Notes | (direct) | Structured grocery organization |
+| budget-tracker | Frontend Design | (direct) | UI output for budget workflows |
+| extract-locations | Notion | (direct) | Candidate location extraction |
 
-## Adding Integrations
+Skill file pattern:
+- `core/integrations/<service>/skills/<skill-name>/SKILL.md`
 
-Each integration folder contains:
+## Integration Directories
 
-- `README.md` - Full documentation and manual setup
-- `SETUP_SKILL.md` - Skill template for automated installation
-- `mcp-config.json` - MCP server configuration template
+- `things/`
+- `granola/`
+- `notion/`
+- `supabase/`
+- `gmail/`
+- `google-drive/`
+- `apple-notes/`
+- `frontend-design/`
+- `digest/`
+- `mcp-servers/`
 
-## Using Integrations
+## MCP Server Notes
 
-Most integrations can be set up by telling Claude:
+Custom server docs are in `mcp-servers/`. Machine-specific runtime config is in `~/.mcp.json`.
 
-```
-Set up [integration name] for my Personal OS
-```
+## Maintenance Rule
 
-Claude will follow the setup skill to install and configure everything.
-
-## Contributing
-
-To add a new integration:
-
-1. Create a folder under `core/integrations/`
-2. Add `README.md` with documentation
-3. Add `SETUP_SKILL.md` with installation steps
-4. Add any config templates needed
-5. Update this README with the new integration
+When adding/changing an integration:
+1. Update this registry.
+2. Update any affected skill files.
+3. Update `core/architecture/runtime-manifest.yaml` if runtime behavior changed.

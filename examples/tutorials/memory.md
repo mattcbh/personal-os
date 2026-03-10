@@ -14,7 +14,7 @@ AI coding agents (Claude Code, Codex, Factory, etc.) don't have persistent memor
 ├─────────────────────────────────────┤
 │  GOALS.md (Your Objectives)         │  ← Reference for prioritization
 ├─────────────────────────────────────┤
-│  Tasks/*.md (Active Work)           │  ← Current state
+│  things-sync/*.md (Active Work)           │  ← Current state
 ├─────────────────────────────────────┤
 │  Knowledge/*.md (Reference Docs)    │  ← Context when needed
 └─────────────────────────────────────┘
@@ -38,7 +38,7 @@ When you start your AI agent in a directory with an instructions file (AGENTS.md
 
 You are a productivity assistant. When I say "process backlog":
 1. Read BACKLOG.md
-2. Create tasks in Tasks/ with YAML frontmatter
+2. Create tasks in things-sync/ with YAML frontmatter
 3. Clear the backlog when done
 
 Always check GOALS.md before assigning priorities.

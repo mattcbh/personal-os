@@ -23,7 +23,7 @@ personal-os/
 ├── AGENTS.md           # Your AI's instructions and personality
 ├── GOALS.md            # Your objectives and priorities
 ├── BACKLOG.md          # Quick capture inbox
-├── Tasks/              # Individual task files with metadata
+├── things-sync/              # Individual task files with metadata
 ├── Knowledge/          # Reference docs, notes, research
 │   └── voice-samples/  # Your writing examples for voice matching
 └── examples/
@@ -50,9 +50,9 @@ No coding experience required. The AI does the coding.
 
 ### Step 1: Clone or Create Your Workspace
 
-**Option A: Use this template**
+**Option A: Clone your repo**
 ```bash
-git clone https://github.com/amanaiproduct/personal-os.git
+git clone <your-repo-url> personal-os
 cd personal-os
 ./setup.sh
 ```
@@ -73,14 +73,14 @@ You are a personal productivity assistant. You help me:
 - Suggest what to work on each day
 
 ## Workspace Structure
-- Tasks/ - Individual task files
+- things-sync/ - Individual task files
 - Knowledge/ - Reference documents
 - BACKLOG.md - Quick capture inbox
 - GOALS.md - My objectives
 
 ## When I say "process my backlog":
 1. Read BACKLOG.md
-2. Create task files in Tasks/
+2. Create task files in things-sync/
 3. Clear the backlog
 
 ## Task Format
@@ -135,7 +135,7 @@ Open your AI coding agent in the personal-os folder and say:
 Watch what happens. The agent should:
 1. Read your instructions
 2. Read your backlog
-3. Create task files in Tasks/
+3. Create task files in things-sync/
 4. Ask clarifying questions if needed
 
 **This is the core loop**: Dump notes → Process with AI → Get organized tasks.
@@ -163,7 +163,7 @@ AI agents don't remember between sessions. Your Personal OS creates "memory" thr
 |------|------|---------|
 | Instructions | AGENTS.md | How to behave |
 | Priorities | GOALS.md | What matters |
-| State | Tasks/*.md | Current work |
+| State | things-sync/*.md | Current work |
 | Context | Knowledge/*.md | Reference material |
 
 **The insight**: Memory isn't magic - it's just structured information the agent reads each time.
@@ -381,4 +381,4 @@ After using your Personal OS daily, you'll develop intuition for how AI products
 
 ---
 
-*This guide is part of [PersonalOS](https://github.com/amanaiproduct/personal-os) - an open-source template for building your AI-powered productivity system.*
+*This guide is part of your local workspace documentation for building an AI-powered productivity system.*

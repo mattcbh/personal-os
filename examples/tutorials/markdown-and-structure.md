@@ -46,17 +46,17 @@ In PersonalOS, we don't use a database to store relationships. We use the filesy
 ### 1. Semantics by Location
 Where a file lives tells the AI what it *is*.
 
-- `Tasks/Fix-Bug.md` → The agent knows this is actionable work.
+- `things-sync/Fix-Bug.md` → The agent knows this is actionable work.
 - `Knowledge/Fix-Bug.md` → The agent knows this is a post-mortem or documentation.
 - `Archive/Fix-Bug.md` → The agent knows to ignore this unless asked for history.
 
-You don't need to explain "This is a task" in the file content. The folder path `/Tasks/` *is* the explanation.
+You don't need to explain "This is a task" in the file content. The folder path `/things-sync/` *is* the explanation.
 
 ### 2. Scoping Context
 Directory structures allow you to control the AI's "attention span."
 
 - **Broad Scope**: "Search `Knowledge/` for best practices." (Agent looks at reference material).
-- **Narrow Scope**: "Check `Tasks/Active/` for conflicts." (Agent looks only at current work).
+- **Narrow Scope**: "Check `things-sync/Active/` for conflicts." (Agent looks only at current work).
 
 This prevents the "needle in a haystack" problem where the AI gets confused by irrelevant documents.
 
@@ -81,7 +81,7 @@ When you combine **Structured Markdown** with **Semantic Directories**, you crea
 **Example Workflow:**
 1.  **User**: "What's high priority?"
 2.  **Agent**:
-    *   Scans directory: `Tasks/` (ignoring `Knowledge/`)
+    *   Scans directory: `things-sync/` (ignoring `Knowledge/`)
     *   Parses files: Reads YAML frontmatter for `priority: P0`
     *   Synthesizes: Returns a list of P0 tasks using the Markdown headers as summaries.
 

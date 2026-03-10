@@ -21,7 +21,7 @@ Claude Code comes with tools for:
 ```
 You: Create a new P0 task for the API bug
 
-Claude: [Uses write tool to create Tasks/Fix API bug.md]
+Claude: [Uses write tool to create things-sync/Fix API bug.md]
 ✓ Created: Fix API bug.md
 ```
 

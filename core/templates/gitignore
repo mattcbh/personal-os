@@ -1,9 +1,9 @@
 # Template .gitignore for Task Management System
 # Copy relevant parts to your .gitignore
 
-# Personal task files
-Tasks/*.md
-!Tasks/.gitkeep
+# Personal task files (synced with Things 3)
+things-sync/
+!things-sync/.gitkeep
 BACKLOG.md
 
 # Personal configuration
@@ -12,7 +12,7 @@ GOALS.md        # Personal goals
 
 # Keep templates and examples
 !AGENTS_TEMPLATE.md
-!Tasks/example.md
+!things-sync/example.md
 
 # Python
 __pycache__/

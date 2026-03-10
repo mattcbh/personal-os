@@ -1,10 +1,9 @@
 # Template .gitignore for Task Management System
 # Copy relevant parts to your .gitignore
 
-# Personal task files
-Tasks/*.md
-!Tasks/.gitkeep
-!Tasks/README.md
+# Personal task files (synced with Things 3)
+things-sync/
+!things-sync/.gitkeep
 BACKLOG.md
 
 # Personal knowledge files
@@ -19,8 +18,19 @@ GOALS.md        # Personal goals
 # Keep templates and examples
 !CLAUDE_TEMPLATE.md
 !config.example.yaml
-!Tasks/example.md
+!things-sync/example.md
 !CRM/example.md
+
+# Credentials & secrets
+.env
+.env.*
+credentials.json
+.claude/settings.local.json
+**/token.json
+**/tokens.json
+core/integrations/google-drive/scripts/credentials.json
+core/integrations/google-drive/scripts/token.json
+core/integrations/mcp-servers/credentials/*.json
 
 # Python
 __pycache__/
@@ -30,7 +40,6 @@ __pycache__/
 venv/
 .venv/
 env/
-.env
 
 # IDE & Editor configs
 .vscode/
