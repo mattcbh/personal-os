@@ -32,6 +32,8 @@ For full system documentation, architecture, and troubleshooting, see:
 
 - **Obsidian vault:** `~/Obsidian/personal-os/`
 - **Google Drive:** `~/Library/CloudStorage/GoogleDrive-matt@cornerboothholdings.com/My Drive/`
+- **Downloads:** files received from elsewhere default to `Corner Booth Holdings/9- Personal Downloads/`
+- **Screenshots:** when Matt says "screenshot", default to Dropbox `~/Library/CloudStorage/Dropbox/Screenshots/`
 - **MCP servers:** `~/Projects/automation-machine-config/mcp-servers/` is the install source of truth. `~/mcp-servers/` is a convenience mirror/symlink.
 - **Session command:** `brain` (creates/attaches tmux session)
 - **Detach:** `Ctrl-b d`
@@ -48,6 +50,17 @@ Use these files as the primary source of truth before relying on duplicated inst
 - Policy pack index: `core/policies/README.md`
 - Automation docs: `core/automation/README.md`
 - Integrations/skills registry: `core/integrations/README.md`
+
+## GitHub And Edit Routing
+
+When work touches code, scripts, machine config, or deployed automation behavior, check the owning GitHub-backed repo before editing vault docs.
+
+- `personal-os` is canonical for prompts, context docs, project briefs, workflow docs, and shared skill entrypoints.
+- `automation-runtime-personal` is canonical for personal scheduled-job logic.
+- `automation-runtime-work` is canonical for work scheduled-job logic.
+- `automation-machine-config` is canonical for machine config, install scripts, and local MCP server code.
+- `pnt-data-warehouse` is canonical for warehouse scripts, weekly flash logic, dashboards, and PnT runtime operations.
+- If behavior changes in a GitHub-backed codebase, update the corresponding vault docs and inventories in the same pass.
 
 ## Vault Authority And Reconciliation
 
@@ -151,39 +164,12 @@ When the user says "clear my backlog", "process backlog", or similar:
 6. Run the sync script to push tasks to Things.
 7. Present a concise summary of new tasks, then clear `BACKLOG.md`.
 
-## Deduplication & Duplicate Detection
+## Task Hygiene
 
-When processing backlog items, always check for potential duplicates:
-
-### Deduplication Features:
-- **Similarity Detection**: Compare titles and keywords against existing tasks (60% threshold)
-- **Category Matching**: Same category increases duplicate likelihood
-- **Smart Recommendations**: Suggest merge, review, or create new
-- **Clarification Questions**: Auto-generate for vague items
-
-### Duplicate Resolution Actions
-
-1. **Merge Tasks**: Combine into single task with consolidated context
-2. **Link Related**: Keep separate but note relationship in task body
-3. **Clarify Scope**: Update titles to distinguish (e.g., "Write spec - Feature A" vs "Write spec - Feature B")
-4. **Cancel Duplicate**: Mark one as complete with reference to the kept task
-
-## Clarification Question Templates
-
-### For vague technical tasks:
-- "When you say 'fix the bug', which bug specifically?"
-- "'Update API' - is this the internal API or the customer-facing API?"
-- "Which specific component or system does this affect?"
-
-### For unclear scope:
-- "'Improve performance' - are we targeting load time, API latency, or user experience?"
-- "How will we measure success for this task?"
-- "Is this a quick fix (P2) or critical issue (P0)?"
-
-### For PM-specific ambiguity:
-- "'Write product spec' - which feature specifically?"
-- "'User research' - what questions are we trying to answer?"
-- "'Stakeholder update' - which stakeholders and what format?"
+- Check existing tasks, project briefs, and tracker documents before creating new work.
+- If two items represent the same underlying task, merge or clarify them instead of creating parallel tasks.
+- If scope, owner, or desired outcome is unclear, ask a short clarification question before writing the task.
+- Prefer concrete next actions over abstract placeholders.
 
 ## CRITICAL: Fact-Checking When Generating Task Content
 
@@ -202,20 +188,14 @@ When creating tasks or helping with task content, **ALWAYS double-check facts**:
 
 ## Goals Alignment
 
-- When processing backlog items, consider how each task relates to goals in `GOALS.md`.
-- If no goal fits, ask whether to create a new goal entry or clarify why the work matters.
-- Remind the user when active tasks do not support any current goals.
-
-### Goals.md Reference
-Always consider the user's goals and priorities when processing tasks. Use Goals.md to:
-- Inform priority levels (P0/P1 for quarterly objectives, P2/P3 for supporting work)
-- Flag tasks that don't align with stated objectives
-- Proactively suggest tasks that advance goals
-
-When user asks about tasks by priority (e.g., "show me my P0 tasks"):
-1. Filter tasks by priority
-2. Reference Goals.md to provide context on why these are high priority
-3. Suggest which to tackle first based on dependencies and time of day
+- Tie tasks, plans, and project updates back to `GOALS.md` whenever possible.
+- If work does not fit a current goal, ask whether the goals should change or whether the work is intentionally off-goal.
+- Use `examples/workflows/monthly-goals-review.md` as the playbook for a real recurring goals-review automation.
+- Preferred schedule: Monday morning, with the automation performing the full review on the first Monday of each month.
+- The automation should not just send a passive reminder. It should present a clear keep/change/remove/add decision for goals based on recent focus, then ask for explicit approval before any edits are made.
+- In that review, summarize recent focus from projects, tasks, digests, and recent communications, then ask whether the current goals are still right or should be adjusted.
+- If Matt approves goal changes, update `GOALS.md` and any affected project briefs in the same pass.
+- When explaining priorities, use goals, active commitments, and deadlines rather than a heavy internal status system.
 
 ## Daily Guidance
 
@@ -230,19 +210,19 @@ When user asks about tasks by priority (e.g., "show me my P0 tasks"):
 - Suggest no more than three focus tasks unless the user insists.
 - Flag overdue tasks and propose next steps or follow-up questions.
 
-## Automated Services (LaunchAgents on Mac Mini)
+## Automation Overview
 
-Five jobs run automatically on the brain (4 AM - 10:30 PM). No manual intervention needed. (Transcript Backfill completed 2026-02-18 and was disabled.)
+Live schedules and runtime ownership are documented in `core/automation/README.md`, `core/architecture/runtime-manifest.yaml`, and `core/architecture/pnt-runtime-inventory.md`.
 
-**Full schedule and docs:** `core/automation/README.md`
-**Scripts:** `core/automation/` | **Logs:** `logs/`
-**Manual skills:** `/pnt-sync`, `/meeting-sync`, and `/cos` can be run interactively anytime.
+- This vault holds prompts, context, workflow docs, and shared skills.
+- Runtime job logic lives in the owning GitHub repo or production codebase.
+- Manual skills such as `/things-sync`, `/meeting-sync`, `/pnt-sync`, `/cos`, `/health`, and `/cfo-agent` can be run interactively.
 
 ## Email Policy
 
 **NEVER send emails directly.** Always draft first. Present the draft to Matt for review and only send after explicit confirmation.
 
-**Exception:** Automated LaunchAgents (daily-digest, weekly-flash, email-triage, weekly-followup) send directly since they run headlessly at scheduled times.
+**Exception:** Headless scheduled jobs in the workflow registry (for example daily digest, email triage, weekly follow-up, and weekly flash) may send directly when that is their designed output.
 
 **ALL drafts go through Superhuman.** Every email draft, whether a reply or a new message, must be created via the Superhuman automation script. Never use `gmail_draft_email` or `gmail_draft_reply` to create drafts. Gmail API drafts are invisible in Superhuman (Superhuman uses its own proprietary draft storage). The only exception is drafts that require file attachments (e.g., sign-document skill), since Superhuman keyboard automation can't attach files. Two modes:
 
@@ -284,7 +264,7 @@ Route files based on type:
 | Scenario | Destination |
 |----------|-------------|
 | **Reports & analyses** (markdown — campaign reports, research, diligence, financial analysis) | `~/Obsidian/personal-os/Knowledge/WORK/` |
-| **Binary files** (charts, images, HTML presentations, exports, CSVs) | Google Drive `8- Agent Workspace/YYYY-MM/` |
+| **Generated binary/output files** (charts, images, HTML presentations, exports, CSVs created by the agent) | Google Drive `8- Agent Workspace/YYYY-MM/` |
 | **External downloads** (email attachments, web downloads, received files) | Google Drive `9- Personal Downloads/` |
 | **Final business deliverables** (SOPs, brand assets, lease docs, policies) | Google Drive, directly into the relevant business folder |
 
@@ -308,7 +288,8 @@ Route files based on type:
 **Rules:**
 - **Never save files to the Desktop.** Use Agent Workspace or Knowledge folders instead.
 - Default markdown reports and analyses to Obsidian `Knowledge/WORK/`.
-- Default binary files (images, HTML, CSV, charts) to Google Drive `8- Agent Workspace/YYYY-MM/`. Create the month subfolder if it doesn't exist.
+- Default generated binary files (images, HTML, CSV, charts) to Google Drive `8- Agent Workspace/YYYY-MM/`. Create the month subfolder if it doesn't exist.
+- Any file downloaded or received from somewhere else goes to `9- Personal Downloads/` first, even if it may later become part of a project.
 - Only place files directly in business folders (`0-` through `3-`) when creating a **final deliverable** that unambiguously belongs there — not exploratory analyses.
 - Place downloaded external files (email attachments, web downloads) in `9- Personal Downloads/` with appropriate subfolders based on context.
 
@@ -358,6 +339,28 @@ The following files contain detailed reference information. Read them when the t
 | `core/context/data-visualization.md` | Generating any chart, visualization, dashboard, or visual data presentation |
 | `Knowledge/WORK/244-Flatbush-OSD-Project-Tracker.md` | Processing PnT Park Slope buildout financial content (EAs, invoices, payments, tracking sheets, change orders, budget questions) |
 
+## Project Promotion Rule
+
+When a topic stops being one-off, proactively ask whether it should become a project brief in `projects/`.
+
+Promote work into a project when any of these are true:
+
+- The same company, deal, initiative, or workstream shows up in 3 or more distinct touches within roughly 14 days.
+- The work now spans multiple channels or artifacts: emails, meetings, messages, tasks, scripts, docs, or deliverables.
+- There is active diligence, acquisition work, negotiation, launch planning, buildout, fundraising, hiring, or another multi-week effort.
+- Future updates would clearly benefit from a single source of truth.
+
+When proposing a project, explain why you think it should become one by citing the concrete signals you saw.
+
+Do not create the project automatically. First ask Matt whether he wants to create it.
+
+If Matt says yes:
+
+1. Ask 2-3 short questions to validate the project name, scope, and source-of-truth expectations.
+2. Create or update the brief using the template in `projects/README.md`.
+3. Capture match signals, key people, current status, next actions, recent communications, key dates, and where things live.
+4. Route future updates from email, meetings, messages, and task work back into that brief.
+
 ## Project Source-of-Truth Documents
 
 Some projects have dedicated tracker documents that accumulate state over time and serve as the authoritative source for a specific domain. These are different from project briefs (which summarize status) — trackers contain granular, versioned data that must be read before processing and updated incrementally.
@@ -388,108 +391,11 @@ Some projects have dedicated tracker documents that accumulate state over time a
 
 All three must stay in sync. The Notion page has a Changelog table at the bottom that should get a new row with each significant change.
 
-## Categories (for reference)
+## Prioritization
 
-- **technical**: build, fix, configure
-- **outreach**: communicate, meet, stakeholder communication, partner outreach, user interviews, networking
-- **research**: learn, analyze, user research, market analysis, competitive analysis
-- **writing**: draft, document, product specs, PRDs, user stories, analysis reports
-- **content**: blog posts, social media, public writing, LinkedIn updates (MUST follow personal tone guidelines)
-- **admin**: operations, finance, logistics, scheduling, expense tracking, meeting prep
-- **personal**: health, routines
-- **other**: everything else
-
-## Priority Levels
-
-### Priority Guidelines:
-- **P0**: Critical/urgent, must do THIS WEEK (~3 tasks recommended)
-- **P1**: Important, has deadlines, affects others (~5 tasks recommended)
-- **P2**: Normal priority, can be scheduled (default, ~10 tasks)
-- **P3**: Low priority, nice-to-have (unlimited)
-
-### Priority Criteria:
-- **P0**: Launches, critical bugs affecting users, urgent stakeholder requests, immediate blockers
-- **P1**: Quarterly objectives, important feature specs, key stakeholder communication, strategic planning
-- **P2**: Routine work, process improvements, general learning, maintaining stakeholder relationships
-- **P3**: Administrative tasks, speculative ideas, nice-to-have improvements
-
-### Time-Based Recommendations:
-- **Morning (9am-12pm)**: Ideal for outreach and stakeholder communication
-- **Afternoon (2pm-5pm)**: Good for deep work (writing specs, analysis, research)
-- **End of day (5pm+)**: Quick admin tasks or planning
-
-## Task Status Codes
-
-- **n**: Not started (default for new tasks)
-- **s**: Started - actively being worked on
-- **b**: Blocked - waiting on dependencies
-- **d**: Done - completed
-- **r**: Recurring - weekly recurring tasks that should be revisited every week
-
-### Recurring Tasks (status: r)
-Recurring tasks need regular weekly attention:
-- **Review weekly**: Check these every Monday or at week start
-- **Update progress**: Add notes about weekly progress without marking complete
-- **Examples**: Weekly metrics review, team 1:1s, roadmap updates
-- **Never auto-delete**: These persist until manually changed to done
-
-## Decision Framework
-
-For each backlog item, ask:
-1. **What type of work is this?** -> Choose category
-2. **How urgent/important is this?** -> Assign priority based on Goals.md
-3. **What's the specific next action?** -> Create actionable task
-
-## Automatic System Integrity Checks
-
-Run these checks automatically (without being asked):
-
-### When Processing Backlog
-- Check current priority distribution
-- Look for potential duplicate tasks before creating new ones
-- If many high-priority tasks exist, consider if they're all truly urgent
-
-### After Creating Any Task
-- Verify the task was created successfully
-- Check if priority limits are exceeded
-- Provide feedback: "Created [task]. You now have X P0 tasks."
-
-### When Listing Tasks
-- Show task count by priority at the top
-- If user has started tasks (status 's'), remind them to update or complete
-- Flag any obvious issues (too many P0s, aging tasks without progress)
-
-### After Completing Tasks
-- Suggest the next highest priority task to start
-- If completing a P0/P1, acknowledge progress toward goals
-- Check if any blocked tasks might now be unblocked
-
-## Proactive Anticipation
-
-**Anticipate common next questions:**
-- After task creation -> "Here are your current P0/P1 tasks"
-- After completion -> "Your next highest priority task is X. Want to start it?"
-- After listing -> "I notice you have X started tasks. Want to update their status?"
-
-**Provide context without being asked:**
-- When showing tasks, include time estimates and sum them by priority
-- When creating tasks, show how it affects priority distribution
-- When completing tasks, show progress toward goals
-
-## Ambition & Scale
-
-**When brainstorming ideas & setting goals:** Always push toward the bigger, more ambitious version:
-- Instead of "improve feature X," think "reimagine the entire user experience"
-- Rather than "fix this process," consider "create a scalable system that eliminates the need for this process"
-- Not just "ship this quarter's roadmap," but "deliver outcomes that transform how users work"
-- "Learn about X" -> "Become the recognized expert who other PMs consult"
-
-**When drafting communications:** Encourage bold asks - you only get what you ask for:
-- **CRITICAL: Maintain personal tone** - No "key insights", "remember X not Y", unnecessary adjectives
-- Write directly and naturally, like you're talking to a smart colleague
-- For marketing: Lead with the interesting fact, not throat-clearing
-- Email to exec: "I'd love your thoughts" -> "I have a specific proposal that could 10x our impact - can we discuss this week?"
-- Partner outreach: "Could we chat?" -> "I'd like to explore a strategic partnership that could benefit both our users"
+- Favor work that advances `GOALS.md`, active project briefs, and near-term commitments.
+- Respect existing `P0` / `P1` / `P2` labels when they already exist in project briefs or task lists, but do not force every item into a heavy taxonomy.
+- When multiple good options exist, recommend the next action that most reduces uncertainty or unblocks momentum.
 
 ## Read Later Workflow
 
@@ -514,42 +420,79 @@ open "things:///add?title=Read%3A%20<TITLE>&list=To%20Read&notes=<URL>"
 - Notes: the original web URL (for articles) or the Dropbox file path (for PDFs only)
 - Never download web articles just to save them. The URL is enough.
 
-## Specialized Workflows
+## Workflow Registry
 
-For complex tasks, delegate to workflow files in `examples/workflows/`. Read the workflow file and follow its instructions.
+Use this as the index of recurring workflows. Read the referenced file before running the workflow.
 
-| Trigger                                     | Workflow File                                   | When to Use                                                                |
-| ------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------- |
-| Daily digest                                | `examples/workflows/daily-digest.md`            | "Show me my daily digest"                                                  |
-| Content generation, writing in user's voice | `examples/workflows/content-generation.md`      | Any writing, marketing, or content task                                    |
-| Morning planning                            | `examples/workflows/morning-standup.md`         | "What should I work on today?"                                             |
-| Processing backlog                          | `examples/workflows/backlog-processing.md`      | Reference for backlog flow                                                 |
-| Weekly reflection                           | `examples/workflows/weekly-review.md`           | Weekly review prompts                                                      |
-| Monthly learning review                     | `examples/workflows/monthly-learning-review.md` | "Review learnings" — end-of-month pattern analysis + systemic improvements |
-| Design & presentations                      | `examples/workflows/html-to-figma-design.md`    | "Make the deck", "build the email template", any visual design output      |
+### Interactive Skills
 
-**How to use workflows:**
-1. When a task matches a trigger, read the corresponding workflow file
-2. Follow the workflow's step-by-step instructions
-3. The workflow may reference files in `Knowledge/` for context (e.g., voice samples)
+| Workflow | Entry Point | When to Use |
+|---|---|---|
+| Things sync | `core/integrations/things/skills/things-sync/SKILL.md` | `/things-sync` or any task-sync request |
+| Meeting sync | `core/integrations/granola/skills/meeting-sync/SKILL.md` | `/meeting-sync`, transcript sync, meeting-task extraction |
+| PnT sync | `core/integrations/notion/skills/pnt-sync/SKILL.md` | `/pnt-sync`, buildout comms, Notion/project refresh |
+| Chief of Staff | `core/integrations/gmail/skills/chief-of-staff/SKILL.md` | `/cos` triage, drafting, follow-up, promises |
+| CFO agent | `core/integrations/supabase/skills/cfo-agent/SKILL.md` | `/cfo-agent`, weekly/monthly financial analysis |
+| Health scorecard | `core/integrations/supabase/skills/health-scorecard/SKILL.md` | `/health`, business health snapshot |
+| Sign document | `core/integrations/gmail/skills/sign-document/SKILL.md` | Sign, save, and reply with documents |
+| Share doc | `core/integrations/google-drive/skills/share-doc/SKILL.md` | Publish markdown to Google Docs |
+| Grocery sort | `core/integrations/apple-notes/skills/grocery-sort/SKILL.md` | Grocery-list cleanup in Apple Notes |
+| Budget tracker | `core/integrations/frontend-design/skills/budget-tracker/SKILL.md` | Budget UI / design output |
+| Extract locations | `core/integrations/notion/skills/extract-locations/SKILL.md` | Pull location candidates into Notion |
+
+### Markdown Workflows
+
+| Workflow | File | When to Use |
+|---|---|---|
+| Daily digest | `examples/workflows/daily-digest.md` | "Show me my daily digest" |
+| Content generation | `examples/workflows/content-generation.md` | Writing, marketing, and voice-sensitive content |
+| Morning standup | `examples/workflows/morning-standup.md` | "What should I work on today?" |
+| Backlog processing | `examples/workflows/backlog-processing.md` | "Process my backlog" |
+| Weekly review | `examples/workflows/weekly-review.md` | Weekly reflection and planning |
+| Monthly learning review | `examples/workflows/monthly-learning-review.md` | End-of-month pattern review for learnings |
+| Monthly goals review | `examples/workflows/monthly-goals-review.md` | Monthly goal alignment and goal-edit prompt |
+| Design and presentations | `examples/workflows/html-to-figma-design.md` | Decks, email templates, and visual outputs |
+
+### Scheduled Automations
+
+| Workflow | Canonical Doc | Purpose |
+|---|---|---|
+| Daily Digest | `core/automation/README.md` | Daily briefing output |
+| Project Refresh (AM/PM) | `core/automation/README.md` | Refresh shared project state used by other workflows |
+| Email Triage v2 (AM/PM) | `core/automation/README.md` | Scheduled inbox triage and draft generation |
+| Email Monitor | `core/architecture/runtime-manifest.yaml` | Watch inbound activity and state |
+| Comms Ingest | `core/architecture/runtime-manifest.yaml` | Ingest communications into shared state |
+| PnT Buildout Sync | `core/automation/README.md` | Buildout communications + Notion/project updates |
+| Weekly Follow-Up | `core/automation/README.md` | Weekly follow-up report |
+| Meeting Sync | `core/automation/README.md` | Nightly transcript sync and pending-task extraction |
+| System Health | `core/automation/README.md` | Brain/system health checks |
+| Telegram Bridge | `core/automation/README.md` | Persistent bridge service |
+| PnT Weekly Flash / Preview | `core/architecture/pnt-runtime-inventory.md` | Sunday-night flash preview and send |
+
+**How to use the registry:**
+1. If the user explicitly names a workflow or the task clearly matches one, read its referenced file first.
+2. Use `SKILL.md` entrypoints for interactive commands, `examples/workflows/` for documented manual workflows, and the runtime docs for headless automations.
+3. When workflow behavior changes, update the owning skill/workflow doc and the relevant registry or runtime inventory in the same pass.
 
 ## Creating Custom Skills
 
-When creating new skills for Matt:
+Use a hybrid model:
 
-1. **Store skill in Obsidian vault** (so it syncs between machines):
+1. **Keep the shared `SKILL.md` entrypoint in the vault** so it syncs across machines and stays visible to the agent:
    ```
    ~/Obsidian/personal-os/core/integrations/<app-name>/skills/<skill-name>/SKILL.md
    ```
 
-2. **Create symlinks on BOTH machines** (brain + MacBook):
+2. **Put supporting code in the owning GitHub repo** when the skill needs scripts, templates, tests, CI, or collaborator changes. The skill should point to that code rather than embedding production logic in the vault.
+
+3. **Create symlinks on BOTH machines** (brain + MacBook):
    ```bash
    ln -sf ~/Obsidian/personal-os/core/integrations/<app-name>/skills/<skill-name> ~/.claude/skills/<skill-name>
    ```
 
-3. **Tell Matt to run the symlink command on his MacBook** if you only have access to the brain.
+4. **Update the registries**: `core/integrations/README.md` for the skill index, and `core/architecture/runtime-manifest.yaml` if the skill also changes runtime behavior.
 
-Skills requiring local apps (like Granola) must run on the machine where that app lives.
+Skills requiring local apps (like Granola) must run on the machine where that app lives. Do not move shared skills wholesale to GitHub unless you also deliberately update the source-of-truth policy.
 
 ## Frontend Design — Brand Defaults
 
@@ -604,6 +547,7 @@ The "Propagate?" field is critical. It forces the question: should this one-off 
 
 - "Clear my backlog"
 - "What should I work on today?"
+- "Review my goals"
 - "Run things-sync"
 - "Show tasks supporting goal [goal name]"
 - "What moved me closer to my goals this week?"
