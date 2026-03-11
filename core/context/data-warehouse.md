@@ -215,10 +215,17 @@ These are the authoritative definitions for how we calculate key business metric
 - Google Slides diagram: https://docs.google.com/presentation/d/1aRMzVwJEJZDmC70OqQBrBGygCRXMh1FBUK6mhuL_gcs
 - Mac Mini cleanup/organization doc: Agent Workspace / 2026-02 / mac-mini-data-warehouse-cleanup.md
 
-**Git sync status (Feb 19, 2026):**
-- Mac Mini committed ETL fix work (Feb 19): mailchimp_sync.py, owner_export.py, 022_mv_customer_segments.sql, plus 9 modified scripts
-- ~30 untracked scripts still uncommitted on Mac Mini (billcom_etl.py, qbo_etl.py, weekly_pl_flash.py, etc.)
-- Laptop has newer scripts (delta/CDC owner_customers_etl.py, toast_guestbook_etl.py, toast_customers_etl.py) not on Mac Mini
+**Git / production status (Mar 11, 2026):**
+- Mac Mini production repo is clean and tracked on GitHub.
+- Active production branch on the Mini: `feature/pnt-production-baseline`
+- Legacy branch alias retained temporarily: `feature/paper-supplies-in-prime-cost` at the same commit
+- `main` remains the integration branch and is not auto-deployed
+- Health check: `~/Projects/automation-machine-config/bin/check-pnt-runtime.sh`
+- Operator runbook: `core/architecture/pnt-operator-runbook.md`
+
+**Optional service policy (Mar 11, 2026):**
+- `com.pnt.backfill-monitor` is dormant by default. Enable it only during bounded backfill campaigns.
+- `com.pnt.cloudflared-charts` and `com.pnt.cloudflared-metabase` are disabled by default. The named Cloudflare tunnel is the primary public ingress path.
 
 **QBO API Integration (live as of Feb 12, 2026):**
 - Pulls P&L, Balance Sheet, and Transaction Detail directly from QuickBooks Online API
@@ -233,11 +240,10 @@ These are the authoritative definitions for how we calculate key business metric
 - Usage: `python3 scripts/qbo_etl.py --current` (pull current open period), `--all-open` (fill all gaps), `--dry-run` (preview)
 
 **Remaining work:**
-1. Mac Mini git commit + sync with laptop (P0 - lots of production code uncommitted)
-2. Toast Guestbook automation: needs TOAST_WEB_EMAIL + TOAST_WEB_PASSWORD in .env.toast, Playwright installed, CSS selectors verified against real UI
-3. Owner delta/CDC: merge laptop version to Mac Mini, create customer_changes table in Supabase, test with --dry-run
+1. Review and eventually promote `feature/pnt-production-baseline` into `main` once the current production branch is considered stable enough to become the integration baseline
+2. Decide whether to remove the legacy `feature/paper-supplies-in-prime-cost` branch alias after downstream references are cleaned up
+3. Owner delta/CDC: merge laptop version to Mac Mini, create customer_changes table in Supabase, test with `--dry-run`
 4. Google Business Profile official API (pending application/approval - Outscraper working in meantime)
 5. Park Slope location support when it opens (March 21)
 6. Forkable/ParkDay/Dlivrd catering CSV exports (awaiting Matt to check platforms)
 7. Add `qbo_etl.py --current` to daily or weekly automation (currently manual)
-8. Reconcile checked-in repo drift before trusting local automation files as production truth (`daily_sync.sh`, `toast_customers_etl.py`, and related Mac Mini-only changes)

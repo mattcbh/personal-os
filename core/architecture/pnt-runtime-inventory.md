@@ -6,10 +6,12 @@ Observed production host at hardening time: Mac Mini (`homeserver@brain`) on 202
 
 - Production repo path: `~/Projects/pnt-data-warehouse`
 - Production host: Mac Mini only
-- Current observed production branch at hardening time: `feature/paper-supplies-in-prime-cost`
+- Current production branch: `feature/pnt-production-baseline`
+- Legacy branch alias retained for reference: `feature/paper-supplies-in-prime-cost` at the same commit (`3ad5932`)
 - Branch policy after hardening:
-  - the active production branch must be explicit
-  - it must have an upstream on GitHub
+  - the active production branch must be explicit and human-readable
+  - it must have an upstream on GitHub before it is treated as production
+  - `main` is the long-lived integration branch, not an auto-deployed branch
   - branch state is checked with `automation-machine-config/bin/check-pnt-runtime.sh`
 
 ## Launchd Jobs
@@ -30,8 +32,18 @@ Observed production host at hardening time: Mac Mini (`homeserver@brain`) on 202
 | `com.pnt.metabase` | KeepAlive / RunAtLoad | Metabase server on port 3001 |
 | `com.pnt.chart-server` | KeepAlive / RunAtLoad | Local chart server on port 3002 |
 | `com.pnt.cloudflared-tunnel` | KeepAlive / RunAtLoad | Named Cloudflare tunnel |
-| `com.pnt.cloudflared-charts` | KeepAlive / RunAtLoad | Public tunnel to chart server |
-| `com.pnt.cloudflared-metabase` | KeepAlive / RunAtLoad | Public tunnel to Metabase |
+| `com.pnt.cloudflared-charts` | KeepAlive / RunAtLoad | Legacy direct tunnel to chart server |
+| `com.pnt.cloudflared-metabase` | KeepAlive / RunAtLoad | Legacy direct tunnel to Metabase |
+
+## Optional Service Policy
+
+These services are intentionally not all treated as mandatory:
+
+| Label | Current policy | Notes |
+|---|---|---|
+| `com.pnt.backfill-monitor` | Dormant unless a finite backfill campaign is active | Last observed log activity was February 2026. Re-enable only for bounded cleanup or backfill work. |
+| `com.pnt.cloudflared-charts` | Disabled by default | Superseded by the named Cloudflare tunnel. Keep plist for fallback only. |
+| `com.pnt.cloudflared-metabase` | Disabled by default | Superseded by the named Cloudflare tunnel. Keep plist for fallback only. |
 
 ## Logs
 
@@ -58,9 +70,12 @@ Keep these local to the Mac Mini and out of Git:
 
 - This cluster is intentionally separate from `automation-runtime-personal` and `automation-runtime-work`.
 - Do not move it into the runtime split during this hardening pass.
+- Use `feature/pnt-production-baseline` as the pinned production branch on the Mini until a deliberate promotion to `main` happens.
+- Do not treat branch names like `feature/paper-supplies-in-prime-cost` as stable production identifiers.
 - Use `~/Projects/automation-machine-config/bin/check-pnt-runtime.sh` from the laptop to verify:
   - repo branch and upstream
   - working-tree dirtiness
   - launchd job presence
   - log path existence
   - key runtime files
+- Follow `core/architecture/pnt-operator-runbook.md` for promotion, rollback, and service decisions.

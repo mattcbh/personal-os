@@ -43,6 +43,7 @@ Use these files as the primary source of truth before relying on duplicated inst
 
 - System-of-record matrix and edit policy: `core/architecture/source-of-truth.md`
 - PnT runtime inventory: `core/architecture/pnt-runtime-inventory.md`
+- PnT operator runbook: `core/architecture/pnt-operator-runbook.md`
 - Runtime inventory: `core/architecture/runtime-manifest.yaml`
 - Policy pack index: `core/policies/README.md`
 - Automation docs: `core/automation/README.md`
