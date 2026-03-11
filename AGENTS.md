@@ -32,7 +32,7 @@ For full system documentation, architecture, and troubleshooting, see:
 
 - **Obsidian vault:** `~/Obsidian/personal-os/`
 - **Google Drive:** `~/Library/CloudStorage/GoogleDrive-matt@cornerboothholdings.com/My Drive/`
-- **MCP servers:** `~/mcp-servers/` (symlink to Obsidian vault, syncs between machines)
+- **MCP servers:** `~/Projects/automation-machine-config/mcp-servers/` is the install source of truth. `~/mcp-servers/` is a convenience mirror/symlink.
 - **Session command:** `brain` (creates/attaches tmux session)
 - **Detach:** `Ctrl-b d`
 - **Session name:** `claude`
@@ -41,10 +41,28 @@ For full system documentation, architecture, and troubleshooting, see:
 
 Use these files as the primary source of truth before relying on duplicated instructions in older notes:
 
+- System-of-record matrix and edit policy: `core/architecture/source-of-truth.md`
+- PnT runtime inventory: `core/architecture/pnt-runtime-inventory.md`
 - Runtime inventory: `core/architecture/runtime-manifest.yaml`
 - Policy pack index: `core/policies/README.md`
 - Automation docs: `core/automation/README.md`
 - Integrations/skills registry: `core/integrations/README.md`
+
+## Vault Authority And Reconciliation
+
+`personal-os` has a split operating model by design:
+
+- **Laptop:** authoritative Git history and the only place where `personal-os` commits and pushes should happen.
+- **Mac Mini:** live Obsidian Sync working copy used by automations and remote sessions. It is intentionally **not** a Git checkout.
+- **Other synced devices:** may author vault changes, but those changes still reconcile back through the laptop Git repo.
+
+### Reconciliation Workflow
+
+1. A vault edit may happen on the Mac Mini or another synced client.
+2. Obsidian Sync carries that change back to the laptop working tree.
+3. Review the change from the laptop repo with `git status` / `git diff`.
+4. Commit and push from the laptop repo when the change belongs in history.
+5. Never initialize Git inside the live Mini vault.
 
 ## Task System: Things 3
 

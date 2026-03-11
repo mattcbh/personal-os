@@ -36,7 +36,9 @@ Skill file pattern:
 
 ## MCP Server Notes
 
-Custom server docs are in `mcp-servers/`. Machine-specific runtime config is in `~/.mcp.json`.
+Custom server docs are mirrored in `mcp-servers/`, but the canonical install source for local MCP server code is `~/Projects/automation-machine-config/mcp-servers/`.
+
+Machine-specific Claude MCP config is installed into `~/.mcp.json` by `automation-machine-config/bin/install-machine-config.sh`.
 
 ## Maintenance Rule
 

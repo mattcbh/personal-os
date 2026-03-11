@@ -13,7 +13,14 @@ Automation scripts live in two GitHub repos, NOT in this Obsidian vault:
 
 Both repos reference the Obsidian vault for knowledge (workflows, context docs, transcripts, digests) and MCP configs via `config/runtime.env`. State files in `core/state/` are symlinked to the canonical copies in the work repo.
 
-This directory contains only: prompt templates, MCP configs, Superhuman helpers, and documentation.
+The live Mac Mini vault is an Obsidian Sync working copy, not a Git checkout. This directory is therefore the Obsidian-side architecture, prompt, and helper layer. Production automation code lives in the runtime repos.
+
+## Where To Edit
+
+- **Vault docs, prompts, context, and skills:** edit in `personal-os`
+- **Runtime job logic:** edit in `automation-runtime-personal` or `automation-runtime-work`
+- **Machine-local config and MCP defaults:** edit in `automation-machine-config`
+- **Git history for `personal-os`:** reconcile and commit from the laptop repo only
 
 ## Active Launchd Jobs
 
@@ -32,7 +39,7 @@ This directory contains only: prompt templates, MCP configs, Superhuman helpers,
 | Meeting Sync | 9:00 PM daily | personal | `meeting-sync.sh` | `com.brain.meeting-sync.plist` |
 | Telegram Bridge | KeepAlive / RunAtLoad | work | `telegram-bridge.sh` | `com.brain.telegram-bridge.plist` |
 
-## Files in This Directory (Obsidian-only)
+## Files In This Directory
 
 Prompt templates and docs (referenced by repo scripts via env vars):
 - `comms-ingest-prompt.md` — prompt template for comms ingest
@@ -53,7 +60,10 @@ Utilities:
 - `setup-on-brain.sh`, `setup-email-triage-v2-on-brain.sh` — one-time setup scripts
 
 MCP configs:
-- `mcp-configs/` — source of truth for per-automation MCP server configs
+- `mcp-configs/` — reference copies kept in the vault. Installed production MCP configs are rendered into the runtime repos under `.generated/mcp/`.
+
+Reference-only launchd plists:
+- `launchd-plists/` — archival/reference copies from the legacy `personal-os` runtime. Installed plists on the brain are rendered from the runtime repos and loaded into `~/Library/LaunchAgents/`.
 
 Legacy (completed, no longer scheduled):
 - `transcript-backfill.sh`, `transcript-backfill-fast.py` — completed Feb 2026

@@ -2,6 +2,8 @@
 
 Model Context Protocol (MCP) servers that extend Claude Code with additional capabilities.
 
+This folder is a synced mirror for documentation and reference. The canonical install source for local MCP server code is `~/Projects/automation-machine-config/mcp-servers/`.
+
 ## Structure
 
 ```
@@ -13,7 +15,7 @@ mcp-servers/
 
 ## Setup
 
-This folder syncs via Obsidian Sync. On each machine, create a symlink:
+This folder syncs via Obsidian Sync. Keeping the mirror is useful for reference and cross-device visibility. If you want the convenience symlink, create:
 
 ```bash
 ln -sf ~/Obsidian/personal-os/core/integrations/mcp-servers ~/mcp-servers
@@ -21,13 +23,25 @@ ln -sf ~/Obsidian/personal-os/core/integrations/mcp-servers ~/mcp-servers
 
 ## Configuration
 
-Each machine needs its own `~/.mcp.json` file because paths include the username. Run the setup script for your machine:
+Each machine needs its own `~/.mcp.json` file because paths include the username and role-specific extras. The canonical installer is:
 
 ```bash
-bash ~/Obsidian/personal-os/core/integrations/mcp-servers/setup-macbook.sh
+~/Projects/automation-machine-config/bin/install-machine-config.sh --role laptop --force
 ```
 
-Remote MCP servers (Granola, Notion) use the same config on all machines. Local servers (Contacts) need machine-specific paths.
+The shared Claude MCP baseline on both machines is:
+
+- `notion`
+- `granola`
+- `contacts`
+
+The Mac Mini adds operational extras:
+
+- `google`
+- `google-personal`
+- `supabase`
+- `beeper`
+- `excalidraw`
 
 ## Available Servers
 
@@ -57,3 +71,7 @@ These are configured in `~/.mcp.json` but have no local server code:
 1. Clone or create the server in this folder
 2. Add configuration to `~/.mcp.json` on each machine
 3. Restart Claude Code to pick up changes
+
+## Legacy Wrapper
+
+`setup-macbook.sh` is kept as a convenience wrapper for older notes. It delegates to `automation-machine-config` when that repo exists.
