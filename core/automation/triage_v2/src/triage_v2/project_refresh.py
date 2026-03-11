@@ -36,7 +36,7 @@ DEFAULT_REFRESH_STATE = {
     "warnings": [],
     "per_run_stats": [],
 }
-SOURCE_SNIPPET_LIMIT = 600
+SOURCE_SNIPPET_LIMIT = 2500
 PROJECT_EXCERPT_LIMIT = 5000
 MAX_WARNING_HISTORY = 20
 MAX_RUN_STATS = 20
@@ -159,7 +159,7 @@ def run_project_refresh(cfg: AppConfig) -> dict[str, Any]:
             batch = items[start : start + batch_size]
             try:
                 update, contacts = _project_batch_update(cfg=cfg, project=brief, batch=batch, provider=provider)
-                if update.recent_communications or update.next_actions or update.match_signals:
+                if update.recent_communications or update.next_actions or update.match_signals or update.key_dates or update.current_status_update:
                     brief = apply_project_update(brief, update, updated_date=now[:10])
                     brief_by_name[project_name] = brief
                     if project_name not in updated_projects:
@@ -441,7 +441,9 @@ def _build_project_refresh_prompt(*, project: ProjectBrief, batch: list[SourceIt
             '  "recent_communications": [{"date":"YYYY-MM-DD","source":"Email|Beeper|Transcript","title":"...","bullets":["..."]}],',
             '  "next_actions": [{"action":"...","owner":"Matt","due":"ASAP","source":"..."}],',
             '  "match_signals": ["..."],',
-            '  "important_contacts": [{"name":"...","role":"...","contact":"...","context":"..."}]',
+            '  "important_contacts": [{"name":"...","role":"...","contact":"...","context":"..."}],',
+            '  "key_dates": ["YYYY-MM-DD: Milestone description (source)"],',
+            '  "current_status_update": "Updated status text if warranted"',
             "}",
             "",
             "Rules:",
@@ -450,6 +452,13 @@ def _build_project_refresh_prompt(*, project: ProjectBrief, batch: list[SourceIt
             "- Do not invent facts, deadlines, or people.",
             "- Prefer adding at most 5 next actions and 5 match signals.",
             "- Important contacts should only include people worth adding to a shared people file.",
+            "- key_dates: only include if a source item announces, confirms, or changes a milestone date.",
+            "  Format each as 'Month DD, YYYY: Description (confirmed in Source Date)'.",
+            "  If a date supersedes an existing key date (e.g. opening moved from March 21 to March 24),",
+            "  include the new date line and it will replace the old one automatically.",
+            "- current_status_update: only include if source items contain a significant change to project",
+            "  timeline, milestones, or overall status that makes the existing Current Status stale.",
+            "  Omit this field entirely if nothing warrants changing the status.",
             "",
             "Current project excerpt:",
             _truncate(build_project_excerpt(project, max_recent=8), PROJECT_EXCERPT_LIMIT),
@@ -524,11 +533,26 @@ def _parse_project_update_payload(payload: dict[str, Any]) -> tuple[ProjectUpdat
                 )
             )
 
+    key_dates: list[str] = []
+    raw_dates = payload.get("key_dates")
+    if isinstance(raw_dates, list):
+        for value in raw_dates:
+            cleaned = _clean_inline(str(value))
+            if cleaned:
+                key_dates.append(cleaned)
+
+    current_status_update = ""
+    raw_status = payload.get("current_status_update")
+    if isinstance(raw_status, str):
+        current_status_update = _clean_inline(raw_status)
+
     return (
         ProjectUpdate(
             recent_communications=tuple(recent_entries[: len(recent_entries)]),
             next_actions=tuple(next_actions[:5]),
             match_signals=tuple(match_signals[:5]),
+            key_dates=tuple(key_dates[:10]),
+            current_status_update=current_status_update,
         ),
         contacts[:3],
     )

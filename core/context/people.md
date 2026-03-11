@@ -53,6 +53,22 @@ For any personal tax correspondence (NYS notices, estimated taxes, tax questions
 
 ### Auto-added by Project Refresh
 
+- **Vincenzo** - Industry contact — role unspecified. Contact: (201) 376-5032. Context: PnT Park Slope. Added 2026-03-11.
+
+- **Stratis Morfogen** - Restaurateur / The Restaurant Network NY. Contact: Unknown. Context: PnT Park Slope. Added 2026-03-11.
+
+- **Neil** - Restaurant Network NY contact. Contact: (917) 299-3339. Context: PnT Park Slope. Added 2026-03-11.
+
+- **Riad Nasr** - Restaurateur (Frenchette, Le Rock). Contact: Unknown. Context: PnT Park Slope. Added 2026-03-11.
+
+- **Andrew Tupper** - Founder & Creative Director, Kern + Lead. Contact: andrew@kernandlead.com | 912.224.5419. Context: PnT Park Slope. Added 2026-03-11.
+
+- **Nathan Baschez** - Contact at Lex / Thoughtful. Contact: nathan@lex.page. Context: PnT Park Slope. Added 2026-03-11.
+
+- **Alan Clifford** - Investor / Prospective LP. Contact: Unknown. Context: PnT Park Slope. Added 2026-03-11.
+
+- **Megan Hannum** - Team member, Starkiller Capital. Contact: megan@starkiller.capital. Context: CBH Cash Flow. Added 2026-03-11.
+
 - **Justin Robinson** - Co-founder/CEO Drizly (acq.); Co-founder, 380 Capital. Contact: jrobbc@gmail.com. Context: CBH Cash Flow. Added 2026-03-10.
 
 - **Jennifer Small** - Catering inquiry lead. Contact: jensmall@mac.com | (917) 375-2883. Context: PnT Park Slope. Added 2026-03-10.

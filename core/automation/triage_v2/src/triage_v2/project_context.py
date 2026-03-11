@@ -67,6 +67,7 @@ class ProjectBrief:
     summary: str
     current_status: str
     recent_communications: tuple[RecentCommunication, ...]
+    key_dates: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -91,6 +92,8 @@ class ProjectUpdate:
     recent_communications: tuple[RecentCommunication, ...] = ()
     next_actions: tuple[NextAction, ...] = ()
     match_signals: tuple[str, ...] = ()
+    key_dates: tuple[str, ...] = ()
+    current_status_update: str = ""
 
 
 def load_project_briefs(projects_dir: Path = PROJECTS_DIR) -> list[ProjectBrief]:
@@ -199,6 +202,13 @@ def build_project_excerpt(project: ProjectBrief, *, max_recent: int = 8) -> str:
     else:
         lines.append("- None.")
 
+    lines.extend(["", "Key Dates:"])
+    if project.key_dates:
+        for date_line in project.key_dates:
+            lines.append(f"- {date_line}")
+    else:
+        lines.append("- None.")
+
     lines.extend(["", "Recent Communications:"])
     if project.recent_communications:
         for entry in project.recent_communications[:max_recent]:
@@ -227,6 +237,13 @@ def apply_project_update(
     text = _replace_header_value(text, "Match Signals", ", ".join(merged_signals))
     text = _replace_section(text, "Next Actions", render_next_actions(merged_actions))
     text = _replace_section(text, "Recent Communications", render_recent_communications(merged_recent))
+
+    if update.key_dates:
+        merged_dates = merge_key_dates(project.key_dates, update.key_dates)
+        text = _replace_section(text, "Key Dates", render_key_dates(merged_dates))
+
+    if update.current_status_update:
+        text = _replace_section(text, "Current Status", update.current_status_update.strip())
 
     project.brief_path.write_text(text, encoding="utf-8")
     return load_project_brief(project.brief_path, project.brief_path.parent)
@@ -302,6 +319,67 @@ def render_recent_communications(entries: Iterable[RecentCommunication]) -> str:
     return "\n".join(blocks).strip()
 
 
+def merge_key_dates(existing: Iterable[str], new_dates: Iterable[str]) -> tuple[str, ...]:
+    """Merge new key date lines into existing ones.
+
+    If a new date line shares a milestone keyword with an existing line
+    (e.g. both mention "Friends & Family" or "Grand Opening"), the new
+    line replaces the old one.  Otherwise the new line is appended.
+    """
+    KEY_DATE_RE = re.compile(r"^-?\s*(.+?):\s*(.+)$")
+    result: list[str] = list(existing)
+
+    for new_line in new_dates:
+        new_clean = new_line.strip().lstrip("- ").strip()
+        if not new_clean:
+            continue
+        new_match = KEY_DATE_RE.match(new_clean)
+        new_desc = (new_match.group(2) if new_match else new_clean).lower()
+
+        # Extract milestone keywords (3+ chars, non-date tokens)
+        new_tokens = {
+            tok
+            for tok in re.findall(r"[a-z]{3,}", new_desc)
+            if tok not in {"the", "and", "for", "from", "with", "confirmed", "target", "event"}
+        }
+
+        replaced = False
+        if new_tokens:
+            for idx, existing_line in enumerate(result):
+                existing_clean = existing_line.strip().lstrip("- ").strip()
+                existing_desc = existing_clean.lower()
+                overlap = sum(1 for tok in new_tokens if tok in existing_desc)
+                if overlap >= 2 or (len(new_tokens) == 1 and overlap == 1):
+                    result[idx] = new_clean
+                    replaced = True
+                    break
+
+        if not replaced:
+            result.append(new_clean)
+
+    return tuple(result)
+
+
+def render_key_dates(dates: Iterable[str]) -> str:
+    lines: list[str] = []
+    for date_line in dates:
+        clean = date_line.strip().lstrip("- ").strip()
+        if clean:
+            lines.append(f"- {clean}")
+    return "\n".join(lines)
+
+
+def _extract_key_dates(section_text: str) -> list[str]:
+    out: list[str] = []
+    for raw_line in section_text.splitlines():
+        stripped = raw_line.strip()
+        if stripped.startswith("- "):
+            out.append(stripped[2:].strip())
+        elif stripped and not stripped.startswith("#"):
+            out.append(stripped)
+    return out
+
+
 def _active_project_index(text: str) -> dict[str, ProjectReadmeEntry]:
     active = _section(text, "## Active Projects", "## Archived Projects")
     out: dict[str, ProjectReadmeEntry] = {}
@@ -337,6 +415,7 @@ def _parse_project_brief(path: Path, readme_entry: ProjectReadmeEntry | None) ->
     recent = tuple(_extract_recent_communications(_extract_section(text, "Recent Communications")))
     next_actions = tuple(_extract_next_actions(_extract_section(text, "Next Actions")))
 
+    key_dates = tuple(_extract_key_dates(_extract_section(text, "Key Dates")))
     signals = _extract_match_signals(header_values.get("Match Signals", ""), name)
     status = header_values.get("Status") or (readme_entry.status if readme_entry else "")
     priority = header_values.get("Priority") or (readme_entry.priority if readme_entry else "")
@@ -355,6 +434,7 @@ def _parse_project_brief(path: Path, readme_entry: ProjectReadmeEntry | None) ->
         summary=summary,
         current_status=current_status,
         recent_communications=recent,
+        key_dates=key_dates,
     )
 
 
