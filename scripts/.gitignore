@@ -1,0 +1,10 @@
+# Local-only utilities and generated files that should not be tracked.
+__pycache__/
+combine_batches.py
+run_batches.py
+load_order_items.py
+load_via_rest.py
+pmix_chart.py
+pmix_quarterly_chart.py
+tenders_trend.py
+com.pnt.daily-sync.plist
