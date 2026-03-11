@@ -23,6 +23,13 @@ These workflows are automatically invoked by your agent when a matching task is 
 |----------|------|-------------|
 | [Weekly Review](weekly-review.md) | 15-30 min | Friday PM or Sunday/Monday |
 
+## Monthly Workflows
+
+| Workflow | Time | When to Use |
+|----------|------|-------------|
+| [Monthly Goals Review](monthly-goals-review.md) | 15-30 min | First Monday monthly automation or when goals feel stale |
+| [Monthly Learning Review](monthly-learning-review.md) | 15-30 min | End-of-month learnings review and system improvements |
+
 ## Quick Reference: Common Prompts
 
 **Morning:**
@@ -38,6 +45,7 @@ These workflows are automatically invoked by your agent when a matching task is 
 - "Show me my P0 and P1 tasks"
 - "What's blocked?"
 - "Help me plan next week"
+- "Review my goals"
 
 **Reflection:**
 - "What did I accomplish this week?"
