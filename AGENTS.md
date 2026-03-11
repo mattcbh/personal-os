@@ -168,6 +168,9 @@ When the user says "clear my backlog", "process backlog", or similar:
 
 When processing backlog items, always check for potential duplicates:
 
+- Check existing tasks, project briefs, and tracker documents before creating new work.
+- Prefer concrete next actions over abstract placeholders.
+
 ### Deduplication Features:
 - **Similarity Detection**: Compare titles and keywords against existing tasks (60% threshold)
 - **Category Matching**: Same category increases duplicate likelihood
@@ -235,6 +238,7 @@ When user asks about tasks by priority (e.g., "show me my P0 tasks"):
 1. Filter tasks by priority
 2. Reference Goals.md to provide context on why these are high priority
 3. Suggest which to tackle first based on dependencies and time of day
+4. When multiple good options exist, recommend the action that most reduces uncertainty or unblocks momentum.
 
 ## Daily Guidance
 
@@ -482,6 +486,7 @@ For each backlog item, ask:
 1. **What type of work is this?** -> Choose category
 2. **How urgent/important is this?** -> Assign priority based on Goals.md
 3. **What's the specific next action?** -> Create actionable task
+4. **What unblocks the most momentum?** -> Prefer the action that reduces uncertainty, clears dependencies, or creates a concrete next state
 
 ## Automatic System Integrity Checks
 
