@@ -218,7 +218,6 @@ These are the authoritative definitions for how we calculate key business metric
 **Git / production status (Mar 11, 2026):**
 - Mac Mini production repo is clean and tracked on GitHub.
 - Active production branch on the Mini: `feature/pnt-production-baseline`
-- Legacy branch alias retained temporarily: `feature/paper-supplies-in-prime-cost` at the same commit
 - `main` remains the integration branch and is not auto-deployed
 - Health check: `~/Projects/automation-machine-config/bin/check-pnt-runtime.sh`
 - Operator runbook: `core/architecture/pnt-operator-runbook.md`
@@ -241,9 +240,8 @@ These are the authoritative definitions for how we calculate key business metric
 
 **Remaining work:**
 1. Review and eventually promote `feature/pnt-production-baseline` into `main` once the current production branch is considered stable enough to become the integration baseline
-2. Decide whether to remove the legacy `feature/paper-supplies-in-prime-cost` branch alias after downstream references are cleaned up
-3. Owner delta/CDC: merge laptop version to Mac Mini, create customer_changes table in Supabase, test with `--dry-run`
-4. Google Business Profile official API (pending application/approval - Outscraper working in meantime)
-5. Park Slope location support when it opens (March 21)
-6. Forkable/ParkDay/Dlivrd catering CSV exports (awaiting Matt to check platforms)
-7. Add `qbo_etl.py --current` to daily or weekly automation (currently manual)
+2. Owner delta/CDC: merge laptop version to Mac Mini, create customer_changes table in Supabase, test with `--dry-run`
+3. Google Business Profile official API (pending application/approval - Outscraper working in meantime)
+4. Park Slope location support when it opens (March 21)
+5. Forkable/ParkDay/Dlivrd catering CSV exports (awaiting Matt to check platforms)
+6. Add `qbo_etl.py --current` to daily or weekly automation (currently manual)

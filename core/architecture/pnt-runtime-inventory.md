@@ -7,7 +7,6 @@ Observed production host at hardening time: Mac Mini (`homeserver@brain`) on 202
 - Production repo path: `~/Projects/pnt-data-warehouse`
 - Production host: Mac Mini only
 - Current production branch: `feature/pnt-production-baseline`
-- Legacy branch alias retained for reference: `feature/paper-supplies-in-prime-cost` at the same commit (`3ad5932`)
 - Branch policy after hardening:
   - the active production branch must be explicit and human-readable
   - it must have an upstream on GitHub before it is treated as production
@@ -71,7 +70,7 @@ Keep these local to the Mac Mini and out of Git:
 - This cluster is intentionally separate from `automation-runtime-personal` and `automation-runtime-work`.
 - Do not move it into the runtime split during this hardening pass.
 - Use `feature/pnt-production-baseline` as the pinned production branch on the Mini until a deliberate promotion to `main` happens.
-- Do not treat branch names like `feature/paper-supplies-in-prime-cost` as stable production identifiers.
+- Do not treat stale feature-branch names as stable production identifiers.
 - Use `~/Projects/automation-machine-config/bin/check-pnt-runtime.sh` from the laptop to verify:
   - repo branch and upstream
   - working-tree dirtiness
