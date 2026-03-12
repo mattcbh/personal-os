@@ -74,7 +74,7 @@ class EmailTriageRenderTest(unittest.TestCase):
                 "subject_latest": "Status update",
                 "summary_latest": "Ops Person confirmed the setup is complete and no reply is needed.",
                 "draft_status": "none",
-                "superhuman_url": "https://mail.superhuman.com/matt@cornerbootholdings.com/thread/fyi-001",
+                "superhuman_url": "https://mail.superhuman.com/matt@cornerboothholdings.com/thread/fyi-001",
                 "messageIds": ["m3"],
             }
         ]
