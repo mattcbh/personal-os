@@ -1,5 +1,7 @@
 # GCP Infrastructure (Inbox Triage v2)
 
+Reference copy only. Execute Terraform from the runtime repo checkout at `~/Projects/automation-runtime-work/core/automation/triage_v2/infra/gcp/`.
+
 Terraform scaffolding for the cloud deployment target:
 
 - Cloud Run services: `triage-api`, `triage-worker`
@@ -12,7 +14,7 @@ Terraform scaffolding for the cloud deployment target:
 ## Bootstrap
 
 ```bash
-cd ~/Obsidian/personal-os/core/automation/triage_v2/infra/gcp
+cd ~/Projects/automation-runtime-work/core/automation/triage_v2/infra/gcp
 cp terraform.tfvars.example terraform.tfvars
 terraform init
 terraform plan

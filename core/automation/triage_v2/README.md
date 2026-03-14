@@ -2,6 +2,8 @@
 
 Cloud-first inbox triage pipeline with a local fallback runtime.
 
+This directory is a reference copy in the vault. Run the live implementation from `~/Projects/automation-runtime-work/`.
+
 ## What this implements
 
 - Queue-backed run orchestration (`triage_run` tasks)
@@ -34,7 +36,7 @@ core/automation/triage_v2/
 ## Quick start (local)
 
 ```bash
-cd ~/Obsidian/personal-os
+cd ~/Projects/automation-runtime-work
 export PYTHONPATH=core/automation/triage_v2/src
 python3 -m triage_v2 init-db
 TRIAGE_V2_PROVIDER_MODE=file TRIAGE_V2_SENDER_MODE=local_outbox \

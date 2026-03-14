@@ -1,10 +1,12 @@
 # Email Triage v2 Cutover Checklist
 
+Reference copy only. Run these commands from `~/Projects/automation-runtime-work/` on the target machine.
+
 ## 1. Pre-cutover validation
 
 1. Validate Gmail OAuth for both accounts:
    ```bash
-   cd ~/Obsidian/personal-os
+   cd ~/Projects/automation-runtime-work
    export PYTHONPATH=core/automation/triage_v2/src
    python3 -m triage_v2 check-gmail-auth
    ```
@@ -50,9 +52,9 @@
    ```
 2. Verify active launchd jobs:
    ```bash
-   launchctl list | rg "email-triage"
+   launchctl list | grep "email-triage"
    ```
-3. Confirm `com.brain.email-triage-v2-morning` and `com.brain.email-triage-v2-evening` are loaded.
+3. Confirm `com.matthewlieber.automation-work.email-triage-v2-morning` and `com.matthewlieber.automation-work.email-triage-v2-evening` are loaded.
 
 ## 5. 48-hour hypercare
 
@@ -62,7 +64,7 @@
    - digest send status
 2. If v2 has any critical failure, rollback immediately:
    - unload v2 plists
-   - reload v1 plists (`com.brain.email-triage-morning`, `com.brain.email-triage-evening`)
+   - reload the prior production labels only if the active runtime repo/runbook for that environment still defines them
 
 ## 6. GCP production rollout (after local stabilization)
 

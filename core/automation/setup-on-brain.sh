@@ -1,6 +1,10 @@
 #!/bin/bash
 # Setup script for running automations on the Mac Mini ("brain")
 #
+# Reference-only legacy helper. Active production launchd rendering now lives in
+# the runtime repos under ~/Projects/automation-runtime-personal and
+# ~/Projects/automation-runtime-work.
+#
 # Run this on the brain after syncing Obsidian files:
 #   cd ~/Obsidian/personal-os
 #   ./core/automation/setup-on-brain.sh

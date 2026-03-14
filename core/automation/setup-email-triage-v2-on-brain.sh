@@ -1,5 +1,8 @@
 #!/bin/bash
 # Cut over launchd scheduling from email-triage v1 to email-triage v2.
+#
+# Reference-only legacy helper. The active production scheduler now comes from
+# ~/Projects/automation-runtime-work/scripts/bootstrap-machine.sh.
 
 set -euo pipefail
 

@@ -1,9 +1,11 @@
 # Email Triage v2 Runbook
 
+This runbook is a reference copy in the vault. The live implementation and runnable commands live in `~/Projects/automation-runtime-work/`.
+
 ## Local fallback run
 
 ```bash
-cd ~/Obsidian/personal-os
+cd ~/Projects/automation-runtime-work
 ./core/automation/email-triage-v2.sh --init-db
 ./core/automation/email-triage-v2.sh --run-type am --force-reconcile --dry-run
 ```
@@ -27,7 +29,7 @@ export TRIAGE_V2_ACCOUNTS=work
 ## Validate Gmail OAuth state
 
 ```bash
-cd ~/Obsidian/personal-os
+cd ~/Projects/automation-runtime-work
 export PYTHONPATH=core/automation/triage_v2/src
 python3 -m triage_v2 check-gmail-auth
 ```
@@ -51,7 +53,7 @@ This writes:
 ## Test suite
 
 ```bash
-cd ~/Obsidian/personal-os
+cd ~/Projects/automation-runtime-work
 export PYTHONPATH=core/automation/triage_v2/src
 python3 -m pytest core/automation/triage_v2/tests -q
 ```
@@ -59,7 +61,7 @@ python3 -m pytest core/automation/triage_v2/tests -q
 ## Queue + worker mode
 
 ```bash
-cd ~/Obsidian/personal-os
+cd ~/Projects/automation-runtime-work
 ./core/automation/email-triage-v2.sh --run-type pm --enqueue-only
 ./core/automation/email-triage-v2.sh --worker-once
 ```
@@ -67,7 +69,7 @@ cd ~/Obsidian/personal-os
 ## API mode (local)
 
 ```bash
-cd ~/Obsidian/personal-os
+cd ~/Projects/automation-runtime-work
 export PYTHONPATH=core/automation/triage_v2/src
 python3 -m triage_v2 serve-api --host 0.0.0.0 --port 8080
 ```
@@ -82,7 +84,7 @@ Endpoints:
 ## Required missed-email fixture validation
 
 ```bash
-cd ~/Obsidian/personal-os
+cd ~/Projects/automation-runtime-work
 export PYTHONPATH=core/automation/triage_v2/src
 python3 -m triage_v2 verify-fixture \
   --run-id <run_id> \

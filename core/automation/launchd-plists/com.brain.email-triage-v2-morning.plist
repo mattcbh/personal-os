@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Reference copy only. Production launchd jobs are rendered from automation-runtime-work into ~/Library/LaunchAgents/. -->
 <plist version="1.0">
 <dict>
     <key>Label</key>
@@ -7,14 +8,14 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/homeserver/Obsidian/personal-os/core/automation/email-triage-v2.sh</string>
+        <string>/Users/homeserver/Projects/automation-runtime-work/core/automation/email-triage-v2.sh</string>
         <string>--run-type</string>
         <string>am</string>
         <string>--force-reconcile</string>
     </array>
 
     <key>WorkingDirectory</key>
-    <string>/Users/homeserver/Obsidian/personal-os</string>
+    <string>/Users/homeserver/Projects/automation-runtime-work</string>
 
     <key>StartCalendarInterval</key>
     <dict>
