@@ -239,7 +239,7 @@ Query both calendars when pulling events. Family calendar events should be inclu
 - If a calendar MCP call fails (token expired, timeout, error), state "Calendar unavailable for [calendar name]" in that section. Do NOT substitute data from yesterday's digest.
 - After pulling events, do NOT cross-reference with past digests to "fill in" missing events. If an event doesn't appear in the MCP response, it has been moved, deleted, or rescheduled — omitting it is correct behavior.
 
-**Today:** List all events with time, title, and meeting type. For each event, read the full calendar event details (location, description, conferencing/hangoutLink) to determine the correct format:
+**Today:** List all live calendar events for today, including routine internal meetings and family events, with time, title, and meeting type. Do not suppress internal meetings from `## Today`. For each event, read the full calendar event details (location, description, conferencing/hangoutLink) to determine the correct format:
 - **Google Meet / Zoom / video link in location or conferencing** → "Video call" (e.g., "Video call with Jordan Montgomery")
 - **Restaurant or venue address in location** → "Lunch at [venue]" or "Dinner at [venue]"
 - **Phone number in description/location** → "Call with [person]"
@@ -248,14 +248,14 @@ Query both calendars when pulling events. Family calendar events should be inclu
 
 Never guess the meeting type from the time of day or attendee name. Always read the actual event data.
 
-**Week Ahead:** Only flag items that need attention:
+**This Week:** Only flag items that need attention:
 - External meetings or networking events
 - Lunches, dinners, cocktails
 - Travel
 - Anything requiring preparation
 - Anything unusual/out of the ordinary
 
-Skip routine 1:1s, recurring internal syncs, and standard weekly meetings.
+Skip routine 1:1s, recurring internal syncs, and standard weekly meetings. Same-day internal prep is required only for `## Today`, not for week-ahead items.
 
 **Attendee rendering rule (critical):**
 - `This Week` should render the verified primary contact or the event title only.
@@ -265,11 +265,40 @@ Skip routine 1:1s, recurring internal syncs, and standard weekly meetings.
 
 **Ordering:** Within each day, list meetings in chronological order by start time. The week itself should run from the earliest day to the latest. First event of the week first, last event of the week last.
 
+### Step 6.4: Same-Day Internal Prep
+
+For same-day internal meetings that appear in `## Today`, add a compact internal prep block under the meeting briefing portion of the digest. External meetings still use the attendee-research workflow in Step 6.5. Do not add routine internal prep blocks to `## This Week`.
+
+Before drafting these internal briefings, read `core/integrations/digest/internal-agenda-sources.yaml`.
+
+**Agenda source resolution order (required):**
+1. Explicit Notion or Google Docs link in the live calendar event description
+2. Matching recurring source from `internal-agenda-sources.yaml` keyed by meeting title pattern
+3. Recent transcript context, project notes, and current operating themes as fallback
+
+**Source handling rules:**
+- Use Notion MCP for Notion agenda pages and prefer the section for today's date. If today's section is absent, use the latest dated section at or before today.
+- Use Playwright to read live Google Docs agendas when a doc link is present or mapped. Summarize the current agenda section if it exists.
+- Treat the agenda as blank or stale if there are no current actionable bullets for this meeting, or if the newest content is clearly old relative to today's meeting.
+- If the agenda source is unavailable, blank, or stale, do not drop the meeting. Fall back to recent transcripts, current project context, and open operating themes to generate clearly labeled suggested agenda items.
+
+**Format:**
+```markdown
+**[Meeting Name]** - Internal prep
+- Agenda:
+  - [2-5 bullets summarizing the actual agenda when present]
+- Suggested agenda:
+  - [2-3 bullets only when the agenda is blank, stale, or unavailable]
+- Prep note: [one short line on what Matt should have in mind going in]
+```
+
+When an explicit agenda exists, the `Agenda:` bullets should describe what is actually on the page or doc. Do not invent agenda items unless they are labeled as `Suggested agenda:`.
+
 ### Step 6.5: Deep Attendee Research
 
 For every external meeting in Today or This Week, perform deep research on each attendee. **Never output "context unknown" — if you can't find context, say "no prior interactions found" and note what you searched.**
 
-**IMPORTANT:** Run attendee research for EVERY meeting that isn't in the skip list below — including week-ahead meetings, not just today's. If someone appears as a meeting attendee and they're not a skip pattern, they get the full research workflow (contacts, transcripts, Gmail, Beeper, Granola). "Lunch with Jordan" or "Coffee with Jamie" are external meetings that need research — don't skip them just because the title looks casual.
+**IMPORTANT:** Run attendee research for EVERY meeting that isn't in the skip list below — including week-ahead meetings, not just today's. If someone appears as a meeting attendee and they're not a skip pattern, they get the full research workflow (contacts, transcripts, Gmail, Beeper, and calendar evidence). "Lunch with Jordan" or "Coffee with Jamie" are external meetings that need research — don't skip them just because the title looks casual.
 
 **Skip patterns (no research needed):** Brain Trust, Pies Dos, Matt-Jason, Matt & Sarah, Matt/Jeff, tutoring, Track Practice, family events, recurring internal syncs.
 
@@ -292,7 +321,7 @@ For each external meeting:
 
 **E. Search Beeper** — Search by name AND by phone numbers (format: `XXX XXX XXXX` with spaces). Check iMessage, WhatsApp, and other networks.
 
-**F. Search Granola** — Use `query_granola_meetings` to search for meetings mentioning the person's name.
+**F. Granola is not a lookup step** — Do not search Granola MCP for historical context or note review. If transcript context is missing locally, say so plainly and continue with transcripts, Gmail, Beeper, and calendar evidence.
 
 **G. Compile briefing** for each person:
 
@@ -328,7 +357,7 @@ After compiling the briefing for each person:
    [Full briefing →](obsidian://open?vault=personal-os&file=Knowledge%2FWORK%2Fjordan-montgomery-briefing)
    ```
    (URL-encode the file path: replace `/` with `%2F`, spaces with `%20`)
-3. **If no doc found AND research was substantial** (contacts found, email threads read, transcript references, Granola matches): Save the compiled research to `Knowledge/WORK/{person-name}-briefing.md` and include the Obsidian link
+3. **If no doc found AND research was substantial** (contacts found, email threads read, transcript references, or message context): Save the compiled research to `Knowledge/WORK/{person-name}-briefing.md` and include the Obsidian link
 4. **If no doc found AND research was minimal** (no prior interactions found): Skip — the inline briefing is sufficient, no need to create a standalone doc
 
 ### Step 7: Add Corner Booth Framing for Key Meetings
@@ -620,10 +649,11 @@ Before writing the Business Pulse narrative, read the prepared file at `core/sta
 
 **Sales** $X,XXX yesterday (DOW)
 ▲/▼ X.X% YoY vs DOW Date '25
-{holiday/weather note if applicable}
+{one short context or outlier-driver line only when relevant}
 
 **Labor** XX.X% four-wall · XX.X% hourly
 {STATUS} (target <33%)
+{plain-English freshness note only if needed}
 
 **Reviews** X.XX avg · N new yesterday · N negative
 {TREND vs 30d: IMPROVING/STABLE/DECLINING}
@@ -634,11 +664,20 @@ Before writing the Business Pulse narrative, read the prepared file at `core/sta
 
 **Health Score: XX/100**
 Sales X/30 · Labor X/25 · Reviews X/25 · Ops X/20
-
-{1-2 sentence context grounded in actual data}
+{1 short line on the main driver of today's read}
+{optional second short line only if needed}
 ```
 
 Each metric gets its own block with breathing room. Status/trend on a separate line below each metric. No cramming multiple data points with nested parentheses.
+
+**Business Pulse length rules (required):**
+- Sales should show yesterday and the single-day YoY comp only. Do not add a default WoW line.
+- Use at most one short context line in `Sales`, and only when relevant. Preferred explanations: holiday adjacency, weather distortion, or one clear outlier driver from the comp-drivers file.
+- If the move is large, name the dominant driver plainly (for example: EZCater, one large order, channel mix, or daypart mix). If no single factor explains it, say so plainly.
+- Labor must use the same four-wall calculation used in the compact health-score workflow: 7shifts hourly wages plus imputed management and payroll tax/benefits from the latest closed period.
+- Never print raw provenance like `Imputed from FY2025 P12`. If labor inputs are stale or partial, say that in plain English.
+- Weather is exception-only. Omit it on normal days.
+- Cap `Health Score` at 3-4 lines total. Do not repeat channel-by-channel detail already covered in the `Sales` block.
 
 **Large comp diagnosis (required):**
 - If absolute YoY comp is 10% or more, diagnose it from data first.

@@ -276,4 +276,9 @@ skip_patterns:
   - Track Practice
   - family events
   - recurring internal syncs
+
+# Same-day internal meeting prep source map
+# Use this registry for recurring internal meetings when the live calendar
+# event does not include a usable agenda link.
+internal_agenda_sources: core/integrations/digest/internal-agenda-sources.yaml
 ```

@@ -1,0 +1,24 @@
+meetings:
+  - title_patterns:
+      - "Matt-Jason Weekly Touchpoint"
+      - "Matt-Jason"
+    source_type: notion
+    source_label: "Jason Hershfeld / Matt Lieber 1:1"
+    source_url: "https://www.notion.so/18575b9df2538051888bfa2dd1d03c6b"
+    use_for: "same-day internal prep"
+    notes:
+      - "Prefer the section for today's date."
+      - "If today's date is missing, use the latest dated section at or before today."
+      - "If the current section has no actionable bullets, treat it as blank or stale and suggest agenda items from recent transcripts and project context."
+
+  - title_patterns:
+      - "Brain Trust"
+    source_type: google_doc
+    source_label: "Brain Trust Agenda"
+    source_url: "https://docs.google.com/document/d/159PloGlk6j5srjoZ1F515HdgyNuHLXlY4S8x3evjwVU/edit?tab=t.0"
+    local_shortcut_path: "~/Library/CloudStorage/GoogleDrive-matt@cornerbootholdings.com/My Drive/matt@heapsicecream.com/Brain Trust Agenda.gdoc"
+    use_for: "same-day internal prep"
+    notes:
+      - "Prefer the explicit agenda link embedded in the live calendar event description when present."
+      - "Use the source URL above as the recurring fallback."
+      - "If the doc has no current actionable bullets, treat it as blank or stale and generate suggested agenda items from recent Brain Trust transcripts, PnT context, and open operating themes."

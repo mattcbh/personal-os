@@ -151,7 +151,7 @@ SELECT
 FROM sales s, labor l, latest_closed lc;
 ```
 
-The `labor_pct` is the four-wall number to display. `hourly_labor_pct` is shown in parentheses for operational context (scheduling decisions). The imputation source period is noted so Matt knows when it was last updated.
+The `labor_pct` is the four-wall number to display. `hourly_labor_pct` is shown in parentheses for operational context (scheduling decisions). For the daily digest, do not render raw fiscal shorthand like `FY2025 P12`; if provenance matters, explain it in plain English.
 
 **C. Food Cost % — REMOVED (Feb 2026)**
 
@@ -306,33 +306,35 @@ This sentence is the most valuable part of the scorecard. Be specific and action
 
 When called from the daily digest automation, output the compact version:
 
-```
+``` 
 **Sales** ${yesterday_sales} yesterday ({yesterday_dow})
 {arrow}{yoy_pct}% YoY vs {py_dow} {py_label}
-{holiday_note_if_applicable}
+{one short context line only when relevant: holiday adjacency, weather distortion, or one clear outlier driver}
 
 **Labor** {labor_pct}% four-wall · {hourly_labor_pct}% hourly
-{status} (target <33%)
+{status} (target <33%) or a plain-English freshness warning if labor inputs are stale}
 
 **Reviews** {avg_rating_7d} avg · {count_24h} new yesterday · {negative_count_24h} negative
 {TREND vs 30d: IMPROVING/STABLE/DECLINING}
 
 **Weather** {conditions} {high}F/{low}F today
-{2-day lookahead}
+{include only if weather is operationally unusual}
 
 ---
 
 **Health Score: {score}/100**
 Sales {x}/30 · Labor {x}/25 · Reviews {x}/25 · Ops {x}/20
 
-{1-2 sentence context}
+{1-2 short lines max. Keep the Health Score section to 3-4 lines total.}
 ```
 
-The sales line must show the **single-day comp** (yesterday vs same DOW 52 weeks ago), NOT a 7-day rolling average. This must match what Toast and MarginEdge show.
+The sales line must show the **single-day comp** (yesterday vs same DOW 52 weeks ago), NOT a 7-day rolling average. This must match what Toast and MarginEdge show. Do not include WoW by default.
 
 The average rating uses the 7-day window (more stable). The "new" count uses the 24-hour window (D2 query). This way the digest only reports what's genuinely new since the last digest.
 
 If a holiday shift is relevant, add a one-line note (e.g., "V-Day was Sat this year vs Fri last year"). Only include when a holiday is within 1 day of either comp date.
+
+If the YoY move is large, keep the diagnosis to one concise line and name the dominant driver from the comp-driver data: catering, large order, channel mix, or weather distortion.
 
 For negative reviews: if there are negatives in the 24h window, add the top complaint theme on the trend line, e.g., "STABLE (1 negative on service wait time)". If no negatives, just show the trend.
 
