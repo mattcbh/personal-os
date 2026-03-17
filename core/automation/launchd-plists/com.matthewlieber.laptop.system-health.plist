@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.matthewlieber.laptop.system-health</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/matthewlieber/Obsidian/personal-os/core/automation/system-health.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/matthewlieber/Obsidian/personal-os</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>7</integer>
+        <key>Minute</key>
+        <integer>20</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/matthewlieber/Obsidian/personal-os/logs/system-health-laptop-launchd.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/matthewlieber/Obsidian/personal-os/logs/system-health-laptop-launchd-error.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/Users/matthewlieber/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>/Users/matthewlieber</string>
+        <key>USER</key>
+        <string>matthewlieber</string>
+        <key>SYSTEM_HEALTH_ROLE</key>
+        <string>laptop</string>
+    </dict>
+</dict>
+</plist>

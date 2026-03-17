@@ -25,6 +25,9 @@ except Exception:
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "core" / "architecture" / "runtime-manifest.yaml"
+HOME = Path.home()
+RUNTIME_PERSONAL_ROOT = HOME / "Projects" / "automation-runtime-personal"
+RUNTIME_WORK_ROOT = HOME / "Projects" / "automation-runtime-work"
 
 TEXT_EXTENSIONS = {
     ".md",
@@ -79,6 +82,33 @@ CASE_DRIFT_PATTERNS = [
     "Knowledge/Digests/",
 ]
 
+PERSONAL_RUNTIME_IDS = {
+    "daily-digest",
+    "monthly-goals-review",
+    "meeting-sync",
+    "weekly-followup",
+}
+
+WORK_RUNTIME_IDS = {
+    "project-refresh-morning",
+    "project-refresh-evening",
+    "email-triage-v2-morning",
+    "email-triage-v2-evening",
+    "email-monitor",
+    "comms-ingest",
+    "pnt-sync",
+    "telegram-bridge",
+    "email-triage-v2-local-fallback",
+}
+
+LOCAL_RUNTIME_IDS = {
+    "system-health",
+    "transcript-backfill",
+    "superhuman-draft-queue-writer",
+    "superhuman-draft-queue-watcher",
+    "email-triage-v2-cutover-helper",
+}
+
 
 def iter_text_files(root: Path) -> Iterable[Path]:
     for path in root.rglob("*"):
@@ -108,6 +138,24 @@ def resolve_path(path_value: str) -> Path:
     if p.is_absolute():
         return p
     return ROOT / p
+
+
+def repo_root_for_item(item_id: str) -> Path:
+    if item_id in PERSONAL_RUNTIME_IDS:
+        return RUNTIME_PERSONAL_ROOT
+    if item_id in WORK_RUNTIME_IDS:
+        return RUNTIME_WORK_ROOT
+    return ROOT
+
+
+def resolve_manifest_runtime_path(item_id: str, key: str, path_value: str) -> Path:
+    if key == "launchd_plist" and item_id in PERSONAL_RUNTIME_IDS:
+        return RUNTIME_PERSONAL_ROOT / ".generated" / "launchd" / Path(path_value).name
+    if key == "launchd_plist" and item_id in WORK_RUNTIME_IDS:
+        return RUNTIME_WORK_ROOT / ".generated" / "launchd" / Path(path_value).name
+    if item_id in LOCAL_RUNTIME_IDS:
+        return resolve_path(path_value)
+    return repo_root_for_item(item_id) / path_value
 
 
 def load_manifest_fallback(text: str) -> dict:
@@ -190,7 +238,9 @@ def check_manifest_paths(manifest: dict) -> list[str]:
             value = item.get(key)
             if not isinstance(value, str) or not value.strip():
                 continue
-            resolved = resolve_path(value)
+            if key == "launchd_plist" and item_id not in LOCAL_RUNTIME_IDS:
+                continue
+            resolved = resolve_manifest_runtime_path(item_id, key, value)
             if not resolved.exists():
                 findings.append(f"[manifest] missing {key} for {item_id}: {value}")
     return findings

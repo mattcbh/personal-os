@@ -1,7 +1,16 @@
 version: 2
-last_updated: 2026-03-06
+last_updated: 2026-03-13
 owner: Matt Lieber
 description: Canonical runtime inventory for the Personal OS on the Mac Mini ("brain").
+
+scheduler_policy:
+  canonical_scheduler_host: homeserver@brain
+  laptop_policy: "No Matt-managed launchd schedulers should be loaded on the laptop."
+  install_rule: "Run runtime bootstrap installers only on the Mac Mini. Use --render-only on the laptop."
+  system_health_label_on_brain: com.brain.system-health
+  system_health_label_on_laptop: com.matthewlieber.laptop.system-health
+  system_health_laptop_status: disabled
+  verified_on: 2026-03-13
 
 conventions:
   root: /Users/<user>/Obsidian/personal-os
@@ -14,6 +23,7 @@ scheduled_jobs:
   - id: daily-digest
     enabled: true
     schedule_local: "Daily 05:00 America/New_York"
+    launchd_label: com.matthewlieber.automation-personal.daily-digest
     script: core/automation/daily-digest.sh
     launchd_plist: core/automation/launchd-plists/com.matthewlieber.daily-digest.plist
     outputs:
@@ -21,9 +31,23 @@ scheduled_jobs:
       - logs/daily-digest.log
     state_files: []
 
+  - id: monthly-goals-review
+    enabled: true
+    schedule_local: "Monday 09:00 America/New_York (full review on first Monday only)"
+    launchd_label: com.matthewlieber.automation-personal.monthly-goals-review
+    script: core/automation/monthly-goals-review.sh
+    launchd_plist: core/automation/launchd-plists/com.matthewlieber.automation-personal.monthly-goals-review.plist
+    outputs:
+      - Knowledge/DIGESTS
+      - inbox email with reply CTA
+      - logs/monthly-goals-review.log
+    state_files:
+      - core/state/monthly-goals-review-state.txt
+
   - id: project-refresh-morning
     enabled: true
     schedule_local: "Daily 05:35 America/New_York"
+    launchd_label: com.matthewlieber.automation-work.project-refresh-morning
     script: core/automation/project-refresh.sh
     launchd_plist: core/automation/launchd-plists/com.brain.project-refresh-morning.plist
     outputs:
@@ -36,6 +60,7 @@ scheduled_jobs:
   - id: email-triage-v2-morning
     enabled: true
     schedule_local: "Daily 06:00 America/New_York"
+    launchd_label: com.matthewlieber.automation-work.email-triage-v2-morning
     script: core/automation/email-triage-v2.sh
     launchd_plist: core/automation/launchd-plists/com.brain.email-triage-v2-morning.plist
     outputs:
@@ -50,6 +75,7 @@ scheduled_jobs:
   - id: email-triage-v2-evening
     enabled: true
     schedule_local: "Daily 15:00 America/New_York"
+    launchd_label: com.matthewlieber.automation-work.email-triage-v2-evening
     script: core/automation/email-triage-v2.sh
     launchd_plist: core/automation/launchd-plists/com.brain.email-triage-v2-evening.plist
     outputs:
@@ -64,6 +90,7 @@ scheduled_jobs:
   - id: email-monitor
     enabled: true
     schedule_local: "Every 2 hours from 08:00 to 18:00 America/New_York"
+    launchd_label: com.matthewlieber.automation-work.email-monitor
     script: core/automation/email-monitor.sh
     launchd_plist: core/automation/launchd-plists/com.brain.email-monitor.plist
     outputs:
@@ -75,6 +102,7 @@ scheduled_jobs:
   - id: comms-ingest
     enabled: true
     schedule_local: "Every 30 minutes America/New_York"
+    launchd_label: com.matthewlieber.automation-work.comms-ingest
     script: core/automation/comms-ingest.sh
     launchd_plist: core/automation/launchd-plists/com.brain.comms-ingest.plist
     outputs:
@@ -87,6 +115,7 @@ scheduled_jobs:
   - id: pnt-sync
     enabled: true
     schedule_local: "Daily 16:00 America/New_York"
+    launchd_label: com.matthewlieber.automation-work.pnt-sync
     script: core/automation/pnt-sync.sh
     launchd_plist: core/automation/launchd-plists/com.brain.pnt-sync.plist
     outputs:
@@ -98,6 +127,7 @@ scheduled_jobs:
   - id: project-refresh-evening
     enabled: true
     schedule_local: "Daily 14:35 America/New_York"
+    launchd_label: com.matthewlieber.automation-work.project-refresh-evening
     script: core/automation/project-refresh.sh
     launchd_plist: core/automation/launchd-plists/com.brain.project-refresh-evening.plist
     outputs:
@@ -110,6 +140,7 @@ scheduled_jobs:
   - id: weekly-followup
     enabled: true
     schedule_local: "Friday 16:00 America/New_York"
+    launchd_label: com.matthewlieber.automation-personal.weekly-followup
     script: core/automation/weekly-followup.sh
     launchd_plist: core/automation/launchd-plists/com.brain.weekly-followup.plist
     outputs:
@@ -120,6 +151,7 @@ scheduled_jobs:
   - id: meeting-sync
     enabled: true
     schedule_local: "Daily 21:00 America/New_York"
+    launchd_label: com.matthewlieber.automation-personal.meeting-sync
     script: core/automation/meeting-sync.sh
     launchd_plist: core/automation/launchd-plists/com.brain.meeting-sync.plist
     outputs:
@@ -132,6 +164,7 @@ scheduled_jobs:
   - id: system-health
     enabled: true
     schedule_local: "Daily 07:10 America/New_York"
+    launchd_label: com.brain.system-health
     script: core/automation/system-health.sh
     launchd_plist: core/automation/launchd-plists/com.brain.system-health.plist
     outputs:
@@ -143,6 +176,7 @@ scheduled_jobs:
   - id: transcript-backfill
     enabled: false
     schedule_local: "Every 2 hours from 08:30 to 20:30 America/New_York (legacy)"
+    launchd_label: com.brain.transcript-backfill
     script: core/automation/transcript-backfill.sh
     launchd_plist: core/automation/launchd-plists/com.brain.transcript-backfill.plist
     outputs:
@@ -154,6 +188,7 @@ persistent_jobs:
   - id: telegram-bridge
     enabled: true
     mode: keepalive
+    launchd_label: com.matthewlieber.automation-work.telegram-bridge
     script: core/automation/telegram-bridge.sh
     launchd_plist: core/automation/launchd-plists/com.brain.telegram-bridge.plist
     outputs:
