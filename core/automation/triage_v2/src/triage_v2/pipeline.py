@@ -4,12 +4,13 @@ import json
 import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import re
 import sqlite3
 from typing import Any
 import uuid
 from zoneinfo import ZoneInfo
 
-from triage_v2.classification import ACTION_KEYWORDS, group_to_threads, normalize_text
+from triage_v2.classification import group_to_threads, normalize_text
 from triage_v2.config import AppConfig
 from triage_v2.coverage import build_coverage_report
 from triage_v2.db import (
@@ -35,18 +36,6 @@ from triage_v2.types import Bucket, ThreadMessage, ThreadRecord
 from triage_v2.validate import validate_threads
 
 EASTERN = ZoneInfo("America/New_York")
-ACKNOWLEDGEMENT_HINTS = (
-    "got it",
-    "sounds good",
-    "we will go ahead",
-    "we'll go ahead",
-    "we will proceed",
-    "we'll proceed",
-    "we will process",
-    "we'll process",
-    "will take care of it",
-    "just sent an invite",
-)
 SCHEDULING_REPLY_HINTS = (
     "let me know what works",
     "what works for you",
@@ -58,9 +47,131 @@ SCHEDULING_REPLY_HINTS = (
     "free outside of that window",
     "send over an invite",
 )
-AUTOMATED_SENDER_HINTS = ("noreply", "no-reply", "notification", "notifications", "calendar")
-
-
+OUTBOUND_HANDLING_HINTS = (
+    "go ahead",
+    "sounds good",
+    "looks good",
+    "approved",
+    "approve it",
+    "please process",
+    "process it",
+    "please pay",
+    "wire it",
+    "signed and returned",
+    "fully executed",
+    "works for me",
+    "happy to chat",
+    "coffee or call",
+    "send over an invite",
+    "we are going to pass",
+    "we're going to pass",
+    "pass for now",
+    "looping in",
+    "looping ",
+    "forwarding",
+    "forwarded",
+    "cc'ing",
+    "ccing",
+    "connecting you",
+    "introducing you",
+    "just sent an invite",
+    "please coordinate",
+    "please handle",
+)
+OUTBOUND_NON_CLOSING_HINTS = (
+    "send me",
+    "please send",
+    "can you send",
+    "could you send",
+    "resend",
+    "updated invoice",
+    "corrected invoice",
+    "forward me",
+    "clarify",
+    "help me understand",
+    "what are",
+    "what is",
+    "what's",
+    "why is",
+    "why are",
+    "when is",
+    "who is",
+    "who's",
+    "which one",
+    "can you review",
+    "please review",
+    "i can review",
+    "i will review",
+    "i'll review",
+    "will review",
+    "let me review",
+    "take a look",
+    "look into",
+    "checking on this",
+    "will check",
+    "need more info",
+    "need more detail",
+    "need more context",
+    "circle back",
+    "get back to you",
+    "follow up later",
+)
+SHORT_ACKNOWLEDGEMENT_HINTS = {
+    "ok",
+    "okay",
+    "got it",
+    "sounds good",
+    "perfect",
+    "great",
+    "thanks",
+    "thank you",
+    "yes",
+    "yep",
+}
+TOKEN_RE = re.compile(r"[a-z0-9$][a-z0-9$'&+./:-]*")
+MATCH_STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "by",
+    "can",
+    "for",
+    "from",
+    "fwd",
+    "fw",
+    "have",
+    "hello",
+    "hey",
+    "hi",
+    "how",
+    "i",
+    "if",
+    "in",
+    "is",
+    "it",
+    "just",
+    "let",
+    "me",
+    "my",
+    "of",
+    "ok",
+    "okay",
+    "on",
+    "or",
+    "please",
+    "re",
+    "that",
+    "the",
+    "this",
+    "to",
+    "we",
+    "with",
+    "you",
+    "your",
+}
 def generate_run_id() -> str:
     ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     return f"triagev2-{ts}-{uuid.uuid4().hex[:8]}"
@@ -85,6 +196,7 @@ def _thread_to_dict(item: ThreadRecord) -> dict[str, Any]:
         "response_needed": item.response_needed,
         "suggested_response": item.suggested_response,
         "suggested_action": item.suggested_action,
+        "operational_note": item.operational_note,
         "monitoring_owner": item.monitoring_owner,
         "monitoring_deliverable": item.monitoring_deliverable,
         "monitoring_deadline": item.monitoring_deadline,
@@ -127,7 +239,6 @@ def run_pipeline(
 
     until_ts = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     all_messages = []
-
     for account in cfg.enabled_accounts:
         try:
             checkpoint = get_checkpoint(conn, account)
@@ -191,7 +302,7 @@ def run_pipeline(
             item=item,
             latest_message=latest_message,
             thread_messages=thread_messages,
-            account_email=account_email,
+            self_addresses=_account_self_addresses(cfg, item.account),
             matched_project_priority=item.matched_project_priority,
         )
         enrichment_inputs.append(
@@ -214,6 +325,7 @@ def run_pipeline(
         item.response_needed = enrichment.response_needed
         item.suggested_response = enrichment.suggested_response
         item.suggested_action = enrichment.suggested_action
+        item.operational_note = enrichment.operational_note
         item.bucket = apply_bucket_hint(item.bucket, enrichment)
 
     for item in threads:
@@ -487,6 +599,10 @@ def _account_email_for(cfg: AppConfig, account: str) -> str:
     return cfg.default_work_account if account == "work" else cfg.default_personal_account
 
 
+def _account_self_addresses(cfg: AppConfig, account: str) -> tuple[str, ...]:
+    return cfg.work_self_addresses if account == "work" else cfg.personal_self_addresses
+
+
 def _load_thread_messages(
     *,
     provider: Any,
@@ -542,9 +658,22 @@ def _refine_bucket_with_thread_context(
     item: ThreadRecord,
     latest_message: Any,
     thread_messages: list[ThreadMessage],
-    account_email: str,
+    self_addresses: tuple[str, ...],
     matched_project_priority: str,
 ) -> str:
+    latest_outbound = _latest_same_thread_outbound(thread_messages, self_addresses, latest_message.received_at)
+    if latest_outbound is not None:
+        outbound_state = _outbound_resolution_state(_thread_message_blob(latest_outbound), allow_substantive_statement=True)
+        if outbound_state == "open":
+            if item.bucket in {Bucket.MONITORING.value, Bucket.NEWSLETTERS.value, Bucket.SPAM_MARKETING.value}:
+                return item.bucket
+            return Bucket.ACTION_NEEDED.value
+        if outbound_state != "open":
+            return Bucket.ALREADY_ADDRESSED.value
+
+    if item.bucket == Bucket.ALREADY_ADDRESSED.value:
+        return item.bucket
+
     if item.bucket in {
         Bucket.ACTION_NEEDED.value,
         Bucket.MONITORING.value,
@@ -553,16 +682,10 @@ def _refine_bucket_with_thread_context(
     }:
         return item.bucket
 
-    latest_text = _latest_message_text(latest_message)
-    if _looks_like_acknowledgement(latest_text) and _has_prior_outbound(
-        thread_messages, account_email, latest_message.received_at
-    ):
-        return Bucket.ALREADY_ADDRESSED.value
-
     if (
         item.bucket == Bucket.FYI.value
         and _is_high_priority_project(matched_project_priority)
-        and _looks_like_scheduling_followup(latest_text)
+        and _looks_like_scheduling_followup(_latest_message_text(latest_message))
     ):
         return Bucket.ACTION_NEEDED.value
 
@@ -593,22 +716,81 @@ def _latest_message_text(latest_message: Any) -> str:
     ).lower()
 
 
-def _has_prior_outbound(thread_messages: list[ThreadMessage], account_email: str, latest_received_at: str) -> bool:
-    account_email = (account_email or "").strip().lower()
+def _latest_same_thread_outbound(
+    thread_messages: list[ThreadMessage],
+    self_addresses: tuple[str, ...],
+    latest_received_at: str,
+) -> ThreadMessage | None:
+    self_address_set = _self_address_set(self_addresses)
+    newest: ThreadMessage | None = None
     for row in thread_messages:
-        if row.received_at >= latest_received_at:
+        if row.received_at <= latest_received_at:
             continue
-        if (row.sender_email or "").strip().lower() == account_email:
-            return True
-    return False
+        if (row.sender_email or "").strip().lower() not in self_address_set:
+            continue
+        if newest is None or row.received_at > newest.received_at:
+            newest = row
+    return newest
 
 
-def _looks_like_acknowledgement(text: str) -> bool:
+def _thread_message_blob(message: ThreadMessage) -> str:
+    return "\n".join(
+        part
+        for part in (
+            normalize_text(message.subject),
+            normalize_text(message.body_text),
+        )
+        if part
+    ).lower()
+
+
+def _self_address_set(self_addresses: tuple[str, ...]) -> set[str]:
+    return {email.strip().lower() for email in self_addresses if email.strip()}
+
+
+def _outbound_resolution_state(text: str, *, allow_substantive_statement: bool) -> str:
+    cleaned = normalize_text(text).lower()
+    if not cleaned:
+        return "neutral"
+    if any(hint in cleaned for hint in OUTBOUND_NON_CLOSING_HINTS):
+        return "open"
+    if "?" in cleaned and not _matches_scheduling_resolution(cleaned):
+        return "open"
+    if _is_short_acknowledgement(cleaned):
+        return "handled"
+    if any(hint in cleaned for hint in OUTBOUND_HANDLING_HINTS):
+        return "handled"
+    if allow_substantive_statement and _looks_like_substantive_resolution_statement(cleaned):
+        return "handled"
+    return "neutral"
+
+
+def _is_short_acknowledgement(text: str) -> bool:
+    cleaned = re.sub(r"[.!]+", "", text).strip()
+    return cleaned in SHORT_ACKNOWLEDGEMENT_HINTS
+
+
+def _matches_scheduling_resolution(text: str) -> bool:
+    if any(hint in text for hint in SCHEDULING_REPLY_HINTS):
+        return True
+    return any(
+        hint in text
+        for hint in (
+            "are you free",
+            "does monday work",
+            "does tuesday work",
+            "next week works",
+            "free next week",
+            "happy to meet",
+        )
+    )
+
+
+def _looks_like_substantive_resolution_statement(text: str) -> bool:
     if "?" in text:
         return False
-    if any(keyword in text for keyword in ACTION_KEYWORDS):
-        return False
-    return any(hint in text for hint in ACKNOWLEDGEMENT_HINTS)
+    tokens = [token for token in TOKEN_RE.findall(text.lower()) if token not in MATCH_STOPWORDS]
+    return len(tokens) >= 4
 
 
 def _looks_like_scheduling_followup(text: str) -> bool:

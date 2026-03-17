@@ -37,6 +37,15 @@ def validate_threads(threads: list[ThreadRecord]) -> ValidationResult:
         if item.response_needed and not str(item.suggested_response or "").strip():
             errors.append(f"Thread {key} needs a response but has no suggested response")
 
+        if item.bucket == "Already Addressed":
+            if str(item.suggested_action or "").strip():
+                errors.append(f"Thread {key} is already addressed but still has suggested action text")
+            if str(item.operational_note or "").strip():
+                errors.append(f"Thread {key} is already addressed but still has operational note text")
+
+        if item.bucket == "FYI" and str(item.suggested_action or "").strip():
+            errors.append(f"Thread {key} is FYI but still has next-step action text")
+
         if not THREAD_URL_RE.match(item.thread_url):
             errors.append(f"Malformed Superhuman thread URL for {key}: {item.thread_url}")
 

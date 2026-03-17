@@ -72,6 +72,20 @@ class ThreadMessage:
 
 
 @dataclass
+class OutboundMessage:
+    account: str
+    thread_id: str
+    message_id: str
+    sent_at: str
+    sender_email: str
+    sender_name: str
+    subject: str
+    body_text: str
+    to_emails: tuple[str, ...] = ()
+    cc_emails: tuple[str, ...] = ()
+
+
+@dataclass
 class ThreadRecord:
     account: str
     thread_id: str
@@ -84,6 +98,7 @@ class ThreadRecord:
     response_needed: bool = False
     suggested_response: str = ""
     suggested_action: str = ""
+    operational_note: str = ""
     monitoring_owner: str = ""
     monitoring_deliverable: str = ""
     monitoring_deadline: str = ""

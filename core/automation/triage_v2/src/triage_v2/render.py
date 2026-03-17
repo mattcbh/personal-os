@@ -91,6 +91,14 @@ def _draft_link_html(item: ThreadRecord) -> str:
 def _section_sort_key(section: str, item: ThreadRecord) -> tuple[object, ...]:
     if section == "Newsletters":
         return (_newsletter_priority_rank(item), -_priority_score(item), item.subject_latest.lower(), item.thread_id)
+    if section == "Action Needed":
+        return (
+            -_project_rank(item),
+            -_action_type_score(item),
+            -_priority_score(item),
+            item.subject_latest.lower(),
+            item.thread_id,
+        )
     return (-_priority_score(item), item.subject_latest.lower(), item.thread_id)
 
 
@@ -202,6 +210,7 @@ def _priority_score(item: ThreadRecord) -> int:
             (item.sender_email or "").lower(),
             (item.subject_latest or "").lower(),
             _summary(item.summary_latest, limit=260).lower(),
+            (item.suggested_action or "").lower(),
         )
     )
     score = 0
@@ -215,10 +224,14 @@ def _priority_score(item: ThreadRecord) -> int:
             score += weight
 
     score += int(POLICY.priority_bucket_bonus.get(item.bucket.lower(), 0))
+    score += _project_rank(item)
+    score += _action_type_score(item)
 
-    score += _project_priority_bonus(item.matched_project_priority)
-    if item.matched_project_name:
-        score += 250
+    score += _project_priority_bonus(
+        priority=item.matched_project_priority,
+        project_name=item.matched_project_name,
+        blob=blob,
+    )
 
     sender_email = (item.sender_email or "").lower()
     for domain_hint, bonus in POLICY.priority_domain_bonus.items():
@@ -228,14 +241,44 @@ def _priority_score(item: ThreadRecord) -> int:
     return score
 
 
-def _project_priority_bonus(priority: str) -> int:
+def _project_rank(item: ThreadRecord) -> int:
+    project_name = (item.matched_project_name or "").strip().lower()
+    if not project_name:
+        return 0
+    if project_name in POLICY.priority_project_rank:
+        return int(POLICY.priority_project_rank[project_name])
+    for hint, rank in POLICY.priority_project_rank.items():
+        if hint in project_name:
+            return int(rank)
+    return 0
+
+
+def _action_type_score(item: ThreadRecord) -> int:
+    blob = " ".join(
+        (
+            (item.subject_latest or "").lower(),
+            _summary(item.summary_latest, limit=260).lower(),
+            (item.suggested_action or "").lower(),
+        )
+    )
+    score = 0
+    for hint, weight in POLICY.priority_action_hints.items():
+        if hint in blob:
+            score += int(weight)
+    return score
+
+
+def _project_priority_bonus(*, priority: str, project_name: str, blob: str) -> int:
+    name = (project_name or "").strip().lower()
+    if not name or name not in blob:
+        return 0
     value = (priority or "").strip().upper()
     if value == "P0":
-        return 5000
+        return 500
     if value == "P1":
-        return 2500
+        return 250
     if value == "P2":
-        return 800
+        return 100
     return 0
 
 
@@ -275,6 +318,21 @@ def _summary_counts(grouped: dict[str, dict[str, list[ThreadRecord]]]) -> str:
     return " · ".join(parts)
 
 
+def _ordered_account_groups(section: str, section_group: dict[str, list[ThreadRecord]]) -> list[tuple[str, list[ThreadRecord]]]:
+    ordered: list[tuple[str, list[ThreadRecord]]] = []
+    for account_key, account_name in (("work", "Work"), ("personal", "Personal")):
+        items = section_group[account_key]
+        if not items:
+            continue
+        ordered.append((account_name, items))
+    if section == "FYI":
+        ordered.sort(key=lambda entry: (-_priority_score(entry[1][0]), entry[0]))
+        return ordered
+    if section == "Spam / Marketing":
+        ordered.sort(key=lambda entry: (-min(_priority_score(item) for item in entry[1]), entry[0]))
+    return ordered
+
+
 def render_markdown(
     *,
     run_id: str,
@@ -307,7 +365,7 @@ def render_markdown(
         lines.append(f"## {section} ({count})")
         lines.append("")
 
-        for account_name, items in (("Work", work_items), ("Personal", personal_items)):
+        for account_name, items in _ordered_account_groups(section, grouped[section]):
             if not items:
                 continue
             lines.append(f"### {account_name}")
@@ -337,8 +395,10 @@ def render_markdown(
 
                 if detail == "full" and item.response_needed and item.suggested_response:
                     lines.append(f"  - **Recommended response:** {item.suggested_response}")
-                if detail == "full" and item.suggested_action:
+                if detail == "full" and item.bucket in {"Action Needed", "Monitoring"} and item.suggested_action:
                     lines.append(f"  - **Next step:** {item.suggested_action}")
+                if detail == "full" and item.bucket == "FYI" and item.operational_note:
+                    lines.append(f"  - **Operational note:** {item.operational_note}")
 
                 if detail == "full" and item.bucket == "Monitoring":
                     monitor = " | ".join(
@@ -425,7 +485,7 @@ def render_html(
             f"{html.escape(section)} ({count})</p>"
         )
 
-        for account_name, items in (("Work", work_items), ("Personal", personal_items)):
+        for account_name, items in _ordered_account_groups(section, grouped[section]):
             if not items:
                 continue
             parts.append(f"<p style='font-size:16px;font-weight:700;margin:8px 0 4px 0;color:#555;'>{account_name}</p>")
@@ -468,8 +528,10 @@ def render_html(
 
                 if detail == "full" and item.response_needed and item.suggested_response:
                     content_lines.append(f"<span><b>Recommended response:</b> {html.escape(item.suggested_response)}</span>")
-                if detail == "full" and item.suggested_action:
+                if detail == "full" and item.bucket in {"Action Needed", "Monitoring"} and item.suggested_action:
                     content_lines.append(f"<span><b>Next step:</b> {html.escape(item.suggested_action)}</span>")
+                if detail == "full" and item.bucket == "FYI" and item.operational_note:
+                    content_lines.append(f"<span><b>Operational note:</b> {html.escape(item.operational_note)}</span>")
                 if detail == "full" and item.bucket == "Monitoring":
                     monitor = " | ".join(
                         p

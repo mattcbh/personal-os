@@ -10,6 +10,7 @@ from triage_v2.config import AppConfig
 from triage_v2.context_pack import extract_top_priorities, sender_context_snippets
 from triage_v2.llm_client import ClaudeCliJsonClient, LlmClientError
 from triage_v2.project_context import ProjectBrief, build_project_excerpt
+from triage_v2.sender_policy import match_sender_policy
 from triage_v2.types import Bucket, MessageRecord, ThreadMessage, ThreadRecord
 
 
@@ -17,6 +18,7 @@ ENRICHMENT_BATCH_SIZE = 4
 SUMMARY_LIMIT = 220
 RESPONSE_LIMIT = 220
 ACTION_LIMIT = 180
+NOTE_LIMIT = 180
 BODY_LIMIT = 1500
 THREAD_HISTORY_LIMIT = 2200
 PROJECT_LIMIT = 1800
@@ -43,20 +45,28 @@ AUTOMATED_HINTS = (
     "do-not-reply",
 )
 DOCUMENT_HINTS = (
-    "invoice",
-    "change order",
-    "ea#",
-    "estimate",
-    "quote",
-    "proposal",
-    "bill",
-    "contract",
-    "agreement",
-    "terms",
-    "signature",
-    "sign",
-    "approve",
-    "approval",
+    "please approve",
+    "please review",
+    "please sign",
+    "approval needed",
+    "requires approval",
+    "requires your action",
+    "needs your approval",
+    "signature required",
+    "review and sign",
+    "sign and return",
+    "confirm this invoice",
+    "good to process",
+    "is this good to process",
+    "payment due",
+    "balance due",
+    "outstanding balance",
+    "forms due",
+    "registration deadline",
+    "enrollment deadline",
+    "authorize payment",
+    "capital call",
+    "wire by",
 )
 SCHEDULING_HINTS = (
     "coffee",
@@ -114,6 +124,7 @@ class ThreadEnrichment:
     response_needed: bool
     suggested_response: str
     suggested_action: str
+    operational_note: str
     bucket_hint: str
 
 
@@ -144,12 +155,14 @@ def enrich_threads(cfg: AppConfig, items: list[EnrichmentInput]) -> dict[str, Th
 
 
 def deterministic_enrichment(item: EnrichmentInput) -> ThreadEnrichment:
+    sender_policy = match_sender_policy(item.item.sender_email, item.item.sender_name)
     sender = _sender_label(item.item.sender_name, item.item.sender_email)
     subject = clean_subject(item.latest_message.subject) or item.item.subject_latest
     latest_body = _latest_visible_text(item.latest_message, item.thread_messages)
     text = normalize_text("\n".join(filter(None, [subject, item.latest_message.snippet, latest_body])))
     lowered = text.lower()
     directed_to_other_person = _appears_directed_to_other_person(latest_body)
+    offline_action_needed = _offline_action_needs_attention(subject, lowered, sender_policy.implicit_action_allowed)
 
     response_needed = _response_needed(
         bucket=item.item.bucket,
@@ -163,14 +176,16 @@ def deterministic_enrichment(item: EnrichmentInput) -> ThreadEnrichment:
         if directed_to_other_person and _monitoring_followup_needed(subject, lowered):
             response_needed = False
             bucket_hint = Bucket.MONITORING.value
-        elif directed_to_other_person and _strong_action_signal(subject, lowered):
+        elif directed_to_other_person:
             response_needed = False
             bucket_hint = Bucket.FYI.value
-        elif item.item.bucket == Bucket.ACTION_NEEDED.value and not response_needed:
+        elif item.item.bucket == Bucket.ACTION_NEEDED.value and not response_needed and not offline_action_needed:
             bucket_hint = Bucket.FYI.value
-        elif item.item.bucket == Bucket.FYI.value and response_needed and _strong_action_signal(subject, lowered):
+        elif item.item.bucket == Bucket.FYI.value and offline_action_needed:
             bucket_hint = Bucket.ACTION_NEEDED.value
-        elif item.item.bucket == Bucket.ACTION_NEEDED.value and _monitoring_followup_needed(subject, lowered):
+        elif item.item.bucket == Bucket.FYI.value and response_needed:
+            bucket_hint = Bucket.ACTION_NEEDED.value
+        elif _monitoring_followup_needed(subject, lowered):
             bucket_hint = Bucket.MONITORING.value
 
     summary = _deterministic_summary(
@@ -179,7 +194,7 @@ def deterministic_enrichment(item: EnrichmentInput) -> ThreadEnrichment:
         subject=subject,
         latest_body=latest_body,
         text=lowered,
-        bucket=item.item.bucket,
+        bucket=bucket_hint,
     )
     suggested_action = _deterministic_action(
         sender=sender,
@@ -188,6 +203,15 @@ def deterministic_enrichment(item: EnrichmentInput) -> ThreadEnrichment:
         response_needed=response_needed,
         project=item.project,
         bucket=bucket_hint,
+        directed_to_other_person=directed_to_other_person,
+        offline_action_needed=offline_action_needed,
+    )
+    operational_note = _deterministic_operational_note(
+        sender=sender,
+        subject=subject,
+        text=lowered,
+        bucket=bucket_hint,
+        response_needed=response_needed,
         directed_to_other_person=directed_to_other_person,
     )
     suggested_response = _deterministic_response(
@@ -205,6 +229,7 @@ def deterministic_enrichment(item: EnrichmentInput) -> ThreadEnrichment:
         response_needed=response_needed,
         suggested_response=suggested_response,
         suggested_action=suggested_action,
+        operational_note=operational_note,
         bucket_hint=bucket_hint,
     )
 
@@ -265,7 +290,7 @@ def _build_enrichment_prompt(*, cfg: AppConfig, batch: list[EnrichmentInput]) ->
 
     lines = [
         "For each thread, return JSON only in this shape:",
-        '{"threads":[{"key":"work:abc","summary_latest":"...","response_needed":true,"suggested_response":"...","suggested_action":"...","bucket_hint":"FYI"}]}',
+        '{"threads":[{"key":"work:abc","summary_latest":"...","response_needed":true,"suggested_response":"...","suggested_action":"...","operational_note":"...","bucket_hint":"FYI"}]}',
         "",
         "Rules:",
         "- summary_latest must be one sentence, plain English, max 220 characters.",
@@ -274,10 +299,13 @@ def _build_enrichment_prompt(*, cfg: AppConfig, batch: list[EnrichmentInput]) ->
         "- response_needed is true only when Matt should actually reply by email.",
         "- If the latest message is addressed to someone else (for example 'Hi Jack'), response_needed must be false.",
         "- suggested_response is a one-sentence recommendation for what Matt should send. Leave empty only when response_needed is false.",
-        "- suggested_action is the operational next step, grounded in the email and context. Use it even when no email reply should be drafted.",
+        "- suggested_action is for Action Needed and Monitoring only. Leave it empty for FYI and Already Addressed.",
+        "- operational_note is optional neutral context for FYI only. It must not read like an assignment or a next step.",
         "- bucket_hint must be one of: Action Needed, FYI, Already Addressed, Monitoring, Newsletters, Spam / Marketing.",
         "- Do not invent meetings, approvals, or facts that are not in the thread/context.",
+        "- Action Needed may still have response_needed false when Matt clearly owes an offline task such as approval, signing, payment, upload, or RSVP work.",
         "- If an email is purely confirmational, transactional, or informational, prefer response_needed false and bucket_hint FYI.",
+        "- Already Addressed must not have suggested_action or operational_note.",
         "",
         "Top priorities:",
     ]
@@ -308,6 +336,8 @@ def _parse_llm_result(
         suggested_response = _clean_text(raw_response, RESPONSE_LIMIT)
         raw_action = str(row.get("suggested_action") or fallback.suggested_action)
         suggested_action = _clean_text(raw_action, ACTION_LIMIT)
+        raw_note = str(row.get("operational_note") or fallback.operational_note)
+        operational_note = _clean_text(raw_note, NOTE_LIMIT)
         bucket_hint = str(row.get("bucket_hint") or fallback.bucket_hint).strip()
         if bucket_hint not in ALLOWED_BUCKET_HINTS:
             bucket_hint = fallback.bucket_hint
@@ -315,11 +345,16 @@ def _parse_llm_result(
             suggested_response = fallback.suggested_response
         if not response_needed:
             suggested_response = ""
+        if bucket_hint != Bucket.FYI.value:
+            operational_note = ""
+        if bucket_hint not in {Bucket.ACTION_NEEDED.value, Bucket.MONITORING.value}:
+            suggested_action = ""
         return ThreadEnrichment(
             summary_latest=summary,
             response_needed=response_needed,
             suggested_response=suggested_response,
             suggested_action=suggested_action,
+            operational_note=operational_note,
             bucket_hint=bucket_hint,
         )
     return fallback
@@ -441,6 +476,67 @@ def _offline_or_operational_action(subject: str, text: str) -> bool:
     )
 
 
+PERSONAL_IMPLICIT_ACTION_HINTS = (
+    "overdue",
+    "past due",
+    "balance due",
+    "outstanding balance",
+    "amount due",
+    "payment required",
+    "payment due",
+    "tuition due",
+    "fee due",
+    "unpaid",
+    "enrollment deadline",
+    "registration deadline",
+    "forms to complete",
+    "forms due",
+    "response required",
+    "confirm attendance",
+    "rsvp by",
+)
+
+OFFLINE_ACTION_HINTS = (
+    "memo and receipt needed",
+    "upload the receipt",
+    "receipt required",
+    "requires a memo",
+    "review and sign",
+    "signature required",
+    "sign and return",
+    "approval needed",
+    "requires approval",
+    "needs your approval",
+    "please approve",
+    "please review",
+    "please sign",
+    "authorize payment",
+    "capital call",
+    "wire by",
+)
+
+
+def _offline_action_needs_attention(subject: str, text: str, implicit_action_allowed: bool) -> bool:
+    blob = f"{subject.lower()}\n{text}"
+    if any(
+        hint in blob
+        for hint in (
+            "payment confirmation",
+            "payment of $",
+            "balance is $0.00",
+            "paid in full",
+            "receipt attached",
+        )
+    ):
+        return False
+    if implicit_action_allowed and any(hint in blob for hint in PERSONAL_IMPLICIT_ACTION_HINTS):
+        return True
+    return any(
+        hint in blob
+        for hint in OFFLINE_ACTION_HINTS
+    )
+
+
 def _response_needed(*, bucket: str, sender_email: str, subject: str, text: str, latest_body: str) -> bool:
     if bucket in HARD_GUARD_BUCKETS:
         return False
@@ -449,8 +545,6 @@ def _response_needed(*, bucket: str, sender_email: str, subject: str, text: str,
     if _appears_directed_to_other_person(latest_body):
         return False
     if _has_explicit_ask(text):
-        return True
-    if _has_document_action(subject, text):
         return True
     if _has_scheduling_followup(text):
         return True
@@ -472,6 +566,8 @@ def _has_explicit_ask(text: str) -> bool:
         "are you free",
         "do you want",
         "i look forward to hearing from you",
+        "is this good to process",
+        "good to process",
     )
     if any(prompt in text for prompt in prompts):
         return True
@@ -559,20 +655,27 @@ def _deterministic_action(
     project: ProjectBrief | None,
     bucket: str,
     directed_to_other_person: bool,
+    offline_action_needed: bool,
 ) -> str:
     if bucket == Bucket.MONITORING.value:
         if "subscription required" in text or "blocked" in text or "stall" in text:
             return _clean_text("Track the blocker with the named owner and confirm the resolution path before the deadline.", ACTION_LIMIT)
         return "Track the owner, deliverable, and follow-up deadline."
+    if bucket == Bucket.ALREADY_ADDRESSED.value:
+        return ""
+    if bucket == Bucket.FYI.value:
+        return ""
     if not response_needed:
+        if offline_action_needed:
+            if any(hint in text for hint in ("invoice", "payment", "balance due", "outstanding balance", "amount due")):
+                return _clean_text("Review the request, confirm payment timing, and complete the finance step directly from the thread.", ACTION_LIMIT)
+            if "review and sign" in text or "signature" in text or "sign" in text:
+                return _clean_text("Review and sign the document, then complete the follow-through directly from the thread.", ACTION_LIMIT)
+            if any(hint in text for hint in ("memo and receipt", "receipt required", "requires a memo")):
+                return _clean_text("Complete the required dashboard follow-through directly from the thread; no email draft is needed.", ACTION_LIMIT)
+            return _clean_text("Complete the required offline follow-through directly from the thread; no email draft is needed.", ACTION_LIMIT)
         if directed_to_other_person and _monitoring_followup_needed(subject, text):
             return _clean_text("Track the named owner's reply and confirm the blocker gets resolved without drafting a new email.", ACTION_LIMIT)
-        if _offline_or_operational_action(subject, text):
-            if "memo and receipt" in text:
-                return _clean_text("Upload the receipt and memo through the operational flow instead of drafting a reply.", ACTION_LIMIT)
-            if "ownership invitation" in text:
-                return _clean_text("Open the thread and complete the operational step directly from the email.", ACTION_LIMIT)
-            return _clean_text("Handle the operational next step directly from the thread; no email draft needed.", ACTION_LIMIT)
         return ""
     if _has_document_action(subject, text):
         return _clean_text(f"Reply to {sender} with your decision and confirm timing.", ACTION_LIMIT)
@@ -618,6 +721,24 @@ def _deterministic_response(
             RESPONSE_LIMIT,
         )
     return _clean_text(f"Reply to {sender} with a direct next step.", RESPONSE_LIMIT)
+
+
+def _deterministic_operational_note(
+    *,
+    sender: str,
+    subject: str,
+    text: str,
+    bucket: str,
+    response_needed: bool,
+    directed_to_other_person: bool,
+) -> str:
+    if bucket != Bucket.FYI.value or response_needed:
+        return ""
+    if "support request" in text:
+        return _clean_text(f"{sender} is sending an update on an existing support thread; no reply is needed right now.", NOTE_LIMIT)
+    if _offline_or_operational_action(subject, text):
+        return _clean_text("This lives in an operational workflow rather than an email reply thread.", NOTE_LIMIT)
+    return ""
 
 
 def _first_meaningful_sentence(text: str) -> str:

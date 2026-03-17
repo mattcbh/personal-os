@@ -6,25 +6,27 @@ import re
 from typing import Iterable
 
 from triage_v2.policy import load_policy
+from triage_v2.sender_policy import match_sender_policy
 from triage_v2.types import Bucket, MessageRecord, ThreadRecord
 
 
 ACTION_KEYWORDS = (
-    "please",
     "can you",
-    "deadline",
-    "due",
-    "urgent",
-    "approve",
+    "could you",
+    "would you",
+    "please confirm",
+    "please review",
+    "please approve",
+    "please sign",
+    "please send",
     "action required",
     "needs your",
     "requires your action",
-)
-
-ALREADY_DONE_KEYWORDS = (
-    "thanks, done",
-    "resolved",
-    "handled",
+    "let me know",
+    "what works",
+    "are you free",
+    "rsvp by",
+    "response required",
 )
 
 MONITORING_KEYWORDS = (
@@ -71,6 +73,18 @@ _url_re = re.compile(r"https?://\S+")
 _phone_re = re.compile(r"(?:\+?\d[\d().\-\s]{7,}\d)")
 _pin_re = re.compile(r"\bpin[:\s#-]*\d{3,}\b", re.IGNORECASE)
 POLICY = load_policy()
+GOOGLE_COLLABORATION_HINTS = (
+    "share request",
+    "document shared with you",
+    "shared a document",
+    "requesting access",
+    "is requesting access",
+    "added a comment",
+    "commented on",
+    "invited you to edit",
+    "invited you to view",
+    "invited you to comment",
+)
 
 
 def clean_subject(text: str) -> str:
@@ -146,6 +160,13 @@ def _sender_override_bucket(message: MessageRecord) -> str | None:
     return None
 
 
+def _subject_override_bucket(message: MessageRecord) -> str | None:
+    subject = clean_subject(message.subject).lower()
+    if not subject:
+        return None
+    return POLICY.subject_bucket_overrides.get(subject)
+
+
 def _matches_sender_hints(message: MessageRecord, hints: Iterable[str]) -> bool:
     sender_blob = _sender_blob(message)
     return any(hint in sender_blob for hint in hints)
@@ -191,23 +212,94 @@ def _looks_automated_sender(message: MessageRecord) -> bool:
     return bool(message.list_unsubscribe) or any(hint in sender_blob for hint in POLICY.automated_sender_hints)
 
 
+def _looks_human_sender(message: MessageRecord) -> bool:
+    sender_blob = _sender_blob(message)
+    if bool(message.list_unsubscribe):
+        return False
+    return not any(hint in sender_blob for hint in POLICY.automated_sender_hints)
+
+
+def _looks_unknown_substack_newsletter(message: MessageRecord) -> bool:
+    sender_email = (message.sender_email or "").strip().lower()
+    sender_blob = _sender_blob(message)
+    return sender_email.endswith("@substack.com") or " substack" in sender_blob
+
+
+def _has_explicit_action_request(text: str) -> bool:
+    if has_keyword(text, ACTION_KEYWORDS):
+        return True
+    return "?" in text and not _looks_purely_informational_question(text)
+
+
+def _looks_purely_informational_question(text: str) -> bool:
+    return any(hint in text for hint in ("would you like to shop", "looking for deals", "you can get"))
+
+
+def _looks_feedback_survey(message: MessageRecord, text: str) -> bool:
+    sender_blob = _sender_blob(message)
+    subject = clean_subject(message.subject).lower()
+    blob = f"{sender_blob}\n{subject}\n{text}"
+    if not any(keyword in blob for keyword in POLICY.feedback_survey_keywords):
+        return False
+
+    automated_sender = _looks_automated_sender(message)
+    explicit_sender = any(hint in sender_blob for hint in POLICY.feedback_survey_sender_hints)
+    return automated_sender or explicit_sender
+
+
+def _looks_internal_collaboration_notification(message: MessageRecord, text: str) -> bool:
+    sender_blob = _sender_blob(message)
+    blob = f"{sender_blob}\n{text}"
+    google_notification = any(
+        hint in blob
+        for hint in (
+            "google drive",
+            "google docs",
+            "docs.google.com",
+            "drive-shares-dm-noreply@google.com",
+            "comments-noreply@docs.google.com",
+        )
+    )
+    collaboration_event = any(hint in blob for hint in GOOGLE_COLLABORATION_HINTS)
+    internal_actor = any(domain in blob for domain in POLICY.internal_collaboration_domains)
+    return google_notification and collaboration_event and internal_actor
+
+
 def thread_url(account_email: str, thread_id: str) -> str:
     return f"https://mail.superhuman.com/{account_email}/thread/{thread_id}"
 
 
 def classify_bucket(message: MessageRecord) -> str:
+    sender_policy = match_sender_policy(message.sender_email, message.sender_name)
     sender_blob = _sender_blob(message)
     text = _content_blob(message)
 
-    if bool(message.metadata.get("already_replied")) or has_keyword(text, ALREADY_DONE_KEYWORDS):
-        return Bucket.ALREADY_ADDRESSED.value
+    subject_override_bucket = _subject_override_bucket(message)
+    if subject_override_bucket:
+        return subject_override_bucket
 
     override_bucket = _sender_override_bucket(message)
     if override_bucket:
         return override_bucket
 
-    if _matches_sender_hints(message, POLICY.editorial_sender_hints):
+    if sender_policy.default_bucket == Bucket.NEWSLETTERS.value:
         return Bucket.NEWSLETTERS.value
+
+    if _matches_sender_hints(message, POLICY.editorial_sender_hints) or _looks_unknown_substack_newsletter(message):
+        return Bucket.NEWSLETTERS.value
+
+    if _looks_internal_collaboration_notification(message, text):
+        return Bucket.FYI.value
+
+    if _looks_feedback_survey(message, text):
+        return Bucket.SPAM_MARKETING.value
+
+    if sender_policy.default_bucket == Bucket.FYI.value and sender_policy.sender_kind in {"vendor", "internal", "personal"}:
+        if bool(message.metadata.get("monitor")) or has_keyword(text, MONITORING_KEYWORDS):
+            return Bucket.MONITORING.value
+        if _has_explicit_action_request(text):
+            return Bucket.ACTION_NEEDED.value
+        return Bucket.FYI.value
 
     if _matches_sender_hints(message, POLICY.operational_fyi_sender_hints) and not has_keyword(text, ACTION_KEYWORDS):
         return Bucket.FYI.value
@@ -218,7 +310,7 @@ def classify_bucket(message: MessageRecord) -> str:
         return Bucket.SPAM_MARKETING.value
 
     if (
-        bool(message.metadata.get("is_spam"))
+        (bool(message.metadata.get("is_spam")) and not sender_policy.never_spam)
         or has_keyword(text, SPAM_KEYWORDS)
         or _matches_sender_hints(message, POLICY.promotional_sender_hints)
         or _looks_cold_pitch(text)
@@ -228,7 +320,7 @@ def classify_bucket(message: MessageRecord) -> str:
     if has_keyword(f"{sender_blob}\n{text}", NEWSLETTER_KEYWORDS):
         return Bucket.NEWSLETTERS.value
 
-    if has_keyword(text, ACTION_KEYWORDS):
+    if _has_explicit_action_request(text):
         return Bucket.ACTION_NEEDED.value
 
     if bool(message.metadata.get("monitor")) or has_keyword(text, MONITORING_KEYWORDS):
@@ -237,8 +329,11 @@ def classify_bucket(message: MessageRecord) -> str:
     if _looks_operational_alert(text, sender_blob):
         return Bucket.FYI.value
 
-    if _looks_automated_sender(message):
+    if _looks_automated_sender(message) and not sender_policy.never_spam:
         return Bucket.SPAM_MARKETING.value
+
+    if sender_policy.default_bucket:
+        return sender_policy.default_bucket
 
     return Bucket.FYI.value
 

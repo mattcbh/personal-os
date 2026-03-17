@@ -81,6 +81,7 @@ ACTION NEEDED only when there is an explicit ask, question, or request. Informat
 | Sophie Jardine | — | Mona Creative, press/marketing lead |
 | Emily Koh | — | Mona Creative VP |
 | Ali Goldberg | — | Mona Creative |
+| Park Slope Living | — | Local Park Slope media contact/outlet. Coverage and interview coordination are FYI unless there is a direct ask for Matt. |
 | *@monacreative.com | Domain match | Mona Creative agency |
 | Andrew Tupper | andrew@kernandlead.com | Kern + Lead (email/digital marketing) |
 | Amit Savyon | amit@kernandlead.com | Kern + Lead (customer segmentation) |
@@ -124,6 +125,7 @@ ACTION NEEDED only when there is an explicit ask, question, or request. Informat
 | Name | Email / Domain | Context |
 |------|---------------|---------|
 | Austin Thompson | — | Former automation contractor (engagement ended Feb 2026) |
+| Tara Fdaee | tara.fdaee@toasttab.com | Toast account representative (PnT Park Slope). Human vendor reply, not marketing. |
 | Toast support | *@toasttab.com | POS system |
 | 7shifts | *@7shifts.com | Labor scheduling |
 | MarginEdge | *@marginedge.com | Food cost platform |
@@ -190,6 +192,7 @@ FYI unless addressed directly to Matt. No monitor alerts.
 | Bryan Timko | bryan@lifealive.com | Life Alive founder (Jason intro) |
 | David Tomczak | tomczak@robinhood.org | Robin Hood board placement |
 | Emily Sundberg | emilysundberg@substack.com | "Feed Me" newsletter (food media & hospitality culture). Important, not just a newsletter. Overrides *@substack.com Tier 4 match. |
+| Reed MacNaughton | — | Substack/newsletter source. Treat as newsletter unless there is a direct ask outside the publication. |
 | Joshua Schiller | — | Airway proposal |
 | Amit Shah | amitmshah74@gmail.com | Engineer intro from Alex Blumberg (code review / technical help). Distinct from Amit Savyon. |
 

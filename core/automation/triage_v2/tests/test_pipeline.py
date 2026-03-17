@@ -8,7 +8,8 @@ import unittest
 
 from triage_v2.config import ensure_directories, load_config
 from triage_v2.db import connect, fetch_coverage, init_db, insert_run
-from triage_v2.pipeline import run_pipeline
+from triage_v2.pipeline import _refine_bucket_with_thread_context, run_pipeline
+from triage_v2.types import MessageRecord, ThreadMessage, ThreadRecord
 
 
 class PipelineTest(unittest.TestCase):
@@ -100,7 +101,7 @@ class PipelineTest(unittest.TestCase):
                         "subject": "Re: Park project invoice",
                         "snippet": "Looping back on this.",
                         "body_text": "Looping back on this. Send me the updated invoice and I can review it today.",
-                        "metadata": {},
+                        "metadata": {"sent": True},
                     },
                     {
                         "message_id": "w-101",
@@ -155,7 +156,7 @@ class PipelineTest(unittest.TestCase):
                         "subject": "Re: Pies N Thighs: Vendor Aging as of 02-24-26",
                         "snippet": "Yes, please go ahead.",
                         "body_text": "Yes, please go ahead with the $28000 transfer and process week 2 payments.",
-                        "metadata": {},
+                        "metadata": {"sent": True},
                     },
                     {
                         "message_id": "w-401",
@@ -292,7 +293,37 @@ High-priority deal process.
             encoding="utf-8",
         )
         (self.context_dir / "email-contacts.md").write_text(
-            "## Email Contacts\n\n| Name | Email / Domain | Context |\n|---|---|---|\n| Client Person | client@park-project.com | Park Project vendor |\n",
+            """## Email Contacts
+
+### Tier 2 — Key Business
+
+#### Marketing & Creative
+
+| Name | Email / Domain | Context |
+|---|---|---|
+| Client Person | client@park-project.com | Park Project vendor |
+| Park Slope Living | — | Local media contact/outlet. Coverage and interview coordination are FYI unless there is a direct ask for Matt. |
+
+#### Vendors & Services
+
+| Name | Email / Domain | Context |
+|---|---|---|
+| Tara Fdaee | tara.fdaee@toasttab.com | Toast account representative. Human vendor reply, not marketing. |
+| Toast support | *@toasttab.com | POS system |
+| MarginEdge | *@marginedge.com | Food cost platform |
+
+### Tier 3 — Professional Network
+
+| Name | Email / Domain | Context |
+|---|---|---|
+| Reed MacNaughton | — | Substack/newsletter source. Treat as newsletter unless there is a direct ask outside the publication. |
+
+### Tier 4 — Tracked Sources
+
+| Sender / Domain | Category |
+|---|---|
+| *@substack.com | Newsletter platforms |
+""",
             encoding="utf-8",
         )
         (self.policies_dir / "email-drafting.md").write_text(
@@ -358,6 +389,45 @@ High-priority deal process.
             else:
                 os.environ[key] = value
         self.tmp.cleanup()
+
+    def _thread_record(self, *, bucket: str = "FYI") -> ThreadRecord:
+        return ThreadRecord(
+            account="work",
+            thread_id="thread-1",
+            message_ids=["m1"],
+            sender_email="sender@example.com",
+            sender_name="Sender",
+            subject_latest="Subject",
+            summary_latest="Summary",
+            bucket=bucket,
+            thread_url="https://mail.superhuman.com/matt@cornerboothholdings.com/thread/thread-1",
+        )
+
+    def _latest_message(self, *, sender_email: str, subject: str, received_at: str, snippet: str) -> MessageRecord:
+        return MessageRecord(
+            message_id="m-latest",
+            account="work",
+            thread_id="thread-1",
+            received_at=received_at,
+            sender_email=sender_email,
+            sender_name="Sender",
+            subject=subject,
+            snippet=snippet,
+            body_preview=snippet,
+            metadata={},
+        )
+
+    def _thread_message(self, *, sender_email: str, subject: str, received_at: str, body_text: str) -> ThreadMessage:
+        return ThreadMessage(
+            account="work",
+            thread_id="thread-1",
+            message_id=f"msg-{received_at}",
+            received_at=received_at,
+            sender_email=sender_email,
+            sender_name="Sender",
+            subject=subject,
+            body_text=body_text,
+        )
 
     def _write_refresh_state(self, *, fresh: bool) -> None:
         timestamp = "2099-03-06T01:30:00+00:00" if fresh else "2026-03-04T01:30:00+00:00"
@@ -494,7 +564,7 @@ High-priority deal process.
         self.assertTrue(rich["response_needed"])
         self.assertIn("coffee or a call", rich["suggested_response"].lower())
 
-    def test_acknowledgement_after_my_reply_is_classified_already_addressed(self) -> None:
+    def test_vendor_aging_acknowledgement_stays_fyi(self) -> None:
         self._write_refresh_state(fresh=True)
         run_id = "test-run-jillian"
         insert_run(self.conn, run_id, "manual", "queued", True)
@@ -509,8 +579,176 @@ High-priority deal process.
 
         rows = json.loads((self.cfg.artifact_dir / f"{run_id}.entries.json").read_text(encoding="utf-8"))
         jillian = next(row for row in rows if row["thread_id"] == "t-work-004")
-        self.assertEqual(jillian["bucket"], "Already Addressed")
+        self.assertEqual(jillian["bucket"], "FYI")
+        self.assertEqual(jillian["suggested_action"], "")
+        self.assertEqual(jillian["operational_note"], "")
         self.assertEqual(jillian["draft_status"], "not_needed")
+
+    def test_same_thread_terse_okay_reply_reclassifies_thread_already_addressed(self) -> None:
+        item = self._thread_record(bucket="Action Needed")
+        latest = self._latest_message(
+            sender_email="erin@studiodxd.com",
+            subject="Pies Dos_Studio DXD invoice 04",
+            received_at="2026-03-13T10:00:00+00:00",
+            snippet="Can you confirm this invoice is good to process?",
+        )
+        thread_messages = [
+            self._thread_message(
+                sender_email="erin@studiodxd.com",
+                subject="Pies Dos_Studio DXD invoice 04",
+                received_at="2026-03-13T10:00:00+00:00",
+                body_text="Can you confirm this invoice is good to process?",
+            ),
+            self._thread_message(
+                sender_email="matt@cornerboothholdings.com",
+                subject="Re: Pies Dos_Studio DXD invoice 04",
+                received_at="2026-03-13T10:05:00+00:00",
+                body_text="Okay.",
+            ),
+        ]
+
+        bucket = _refine_bucket_with_thread_context(
+            item=item,
+            latest_message=latest,
+            thread_messages=thread_messages,
+            self_addresses=self.cfg.work_self_addresses,
+            matched_project_priority="",
+        )
+        self.assertEqual(bucket, "Already Addressed")
+
+    def test_newer_work_reply_reclassifies_thread_already_addressed(self) -> None:
+        item = self._thread_record(bucket="FYI")
+        latest = self._latest_message(
+            sender_email="jason@cornerboothholdings.com",
+            subject="Re: toast",
+            received_at="2026-03-13T08:57:24+00:00",
+            snippet="Jason confirmed the direct integrations are intentional.",
+        )
+        thread_messages = [
+            self._thread_message(
+                sender_email="matt@cornerboothholdings.com",
+                subject="toast",
+                received_at="2026-03-12T23:45:29+00:00",
+                body_text="What are these charges for?",
+            ),
+            self._thread_message(
+                sender_email="jason@cornerboothholdings.com",
+                subject="Re: toast",
+                received_at="2026-03-13T08:57:24+00:00",
+                body_text="They are the lower-cost direct integrations.",
+            ),
+            self._thread_message(
+                sender_email="matt@cornerboothholdings.com",
+                subject="Re: toast",
+                received_at="2026-03-13T09:09:48+00:00",
+                body_text="Got it. Thanks.",
+            ),
+        ]
+
+        bucket = _refine_bucket_with_thread_context(
+            item=item,
+            latest_message=latest,
+            thread_messages=thread_messages,
+            self_addresses=self.cfg.work_self_addresses,
+            matched_project_priority="",
+        )
+        self.assertEqual(bucket, "Already Addressed")
+
+    def test_newer_alias_reply_reclassifies_thread_already_addressed(self) -> None:
+        item = self._thread_record(bucket="FYI")
+        latest = self._latest_message(
+            sender_email="douglas.l@inkind.com",
+            subject="inKind Reconnect",
+            received_at="2026-03-12T20:27:48+00:00",
+            snippet="Want to reconnect on the capital partnership conversation.",
+        )
+        thread_messages = [
+            self._thread_message(
+                sender_email="douglas.l@inkind.com",
+                subject="inKind Reconnect",
+                received_at="2026-03-12T20:27:48+00:00",
+                body_text="Would love to reconnect about the capital partnership.",
+            ),
+            self._thread_message(
+                sender_email="matt@heapsicecream.com",
+                subject="Re: inKind Reconnect",
+                received_at="2026-03-12T20:43:55+00:00",
+                body_text="Thanks, but we are going to pass for now.",
+            ),
+        ]
+
+        bucket = _refine_bucket_with_thread_context(
+            item=item,
+            latest_message=latest,
+            thread_messages=thread_messages,
+            self_addresses=self.cfg.work_self_addresses,
+            matched_project_priority="",
+        )
+        self.assertEqual(bucket, "Already Addressed")
+
+    def test_newer_alias_reply_overrides_spam_bucket_for_casey_thread(self) -> None:
+        item = self._thread_record(bucket="Spam / Marketing")
+        latest = self._latest_message(
+            sender_email="casey.schumpert@toasttab.com",
+            subject="Your Restaurant Management Suite Demo Request",
+            received_at="2026-03-13T00:07:29+00:00",
+            snippet="Following up on your demo request.",
+        )
+        thread_messages = [
+            self._thread_message(
+                sender_email="casey.schumpert@toasttab.com",
+                subject="Your Restaurant Management Suite Demo Request",
+                received_at="2026-03-13T00:07:29+00:00",
+                body_text="Can we schedule a demo?",
+            ),
+            self._thread_message(
+                sender_email="matt@heapsicecream.com",
+                subject="Re: Your Restaurant Management Suite Demo Request",
+                received_at="2026-03-13T00:23:53+00:00",
+                body_text="Please upgrade us directly to Pro Suite instead of booking a demo.",
+            ),
+        ]
+
+        bucket = _refine_bucket_with_thread_context(
+            item=item,
+            latest_message=latest,
+            thread_messages=thread_messages,
+            self_addresses=self.cfg.work_self_addresses,
+            matched_project_priority="",
+        )
+        self.assertEqual(bucket, "Already Addressed")
+
+    def test_non_closing_invoice_followup_stays_action_needed(self) -> None:
+        item = self._thread_record(bucket="FYI")
+        latest = self._latest_message(
+            sender_email="darragh@example.com",
+            subject="Updated invoice for PnT Park Slope",
+            received_at="2026-03-13T10:00:00+00:00",
+            snippet="Attached is the updated invoice for PnT Park Slope.",
+        )
+        thread_messages = [
+            self._thread_message(
+                sender_email="darragh@example.com",
+                subject="Updated invoice for PnT Park Slope",
+                received_at="2026-03-13T10:00:00+00:00",
+                body_text="Attached is the updated invoice for PnT Park Slope so payment can move forward.",
+            ),
+            self._thread_message(
+                sender_email="matt@cornerboothholdings.com",
+                subject="Re: Updated invoice for PnT Park Slope",
+                received_at="2026-03-13T11:00:00+00:00",
+                body_text="Send me the updated invoice and I can review it today.",
+            ),
+        ]
+
+        bucket = _refine_bucket_with_thread_context(
+            item=item,
+            latest_message=latest,
+            thread_messages=thread_messages,
+            self_addresses=self.cfg.work_self_addresses,
+            matched_project_priority="P0",
+        )
+        self.assertEqual(bucket, "Action Needed")
 
     def test_amit_followup_gets_response_guidance_and_draft(self) -> None:
         self._write_refresh_state(fresh=True)

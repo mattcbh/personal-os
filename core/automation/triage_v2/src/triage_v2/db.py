@@ -68,6 +68,7 @@ def init_db(conn: sqlite3.Connection) -> None:
             response_needed INTEGER NOT NULL DEFAULT 0,
             suggested_response TEXT,
             suggested_action TEXT,
+            operational_note TEXT,
             monitoring_owner TEXT,
             monitoring_deliverable TEXT,
             monitoring_deadline TEXT,
@@ -140,6 +141,7 @@ def init_db(conn: sqlite3.Connection) -> None:
     _ensure_column(conn, "triage_entries", "draft_authoring_error", "TEXT")
     _ensure_column(conn, "triage_entries", "response_needed", "INTEGER NOT NULL DEFAULT 0")
     _ensure_column(conn, "triage_entries", "suggested_response", "TEXT")
+    _ensure_column(conn, "triage_entries", "operational_note", "TEXT")
     conn.commit()
 
 
@@ -266,12 +268,12 @@ def insert_entries(conn: sqlite3.Connection, run_id: str, entries: list[dict[str
             INSERT INTO triage_entries(
               run_id, account, thread_id, bucket,
               sender_email, sender_name, subject_latest, summary_latest,
-              response_needed, suggested_response, suggested_action,
+              response_needed, suggested_response, suggested_action, operational_note,
               monitoring_owner, monitoring_deliverable, monitoring_deadline,
               draft_status, draft_authoring_mode, draft_context_status, draft_authoring_error,
               thread_url, draft_url, unsubscribe_url,
               accounted_reason, message_ids_json, created_at
-            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 run_id,
@@ -285,6 +287,7 @@ def insert_entries(conn: sqlite3.Connection, run_id: str, entries: list[dict[str
                 1 if bool(entry.get("response_needed")) else 0,
                 entry.get("suggested_response", ""),
                 entry.get("suggested_action", ""),
+                entry.get("operational_note", ""),
                 entry.get("monitoring_owner", ""),
                 entry.get("monitoring_deliverable", ""),
                 entry.get("monitoring_deadline", ""),

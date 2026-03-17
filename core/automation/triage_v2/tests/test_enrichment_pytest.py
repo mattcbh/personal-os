@@ -51,6 +51,8 @@ def test_deterministic_enrichment_downgrades_transactional_confirmation():
     assert enrichment.response_needed is False
     assert apply_bucket_hint(row.item.bucket, enrichment) == "FYI"
     assert "e-zpass" in enrichment.summary_latest.lower()
+    assert enrichment.suggested_action == ""
+    assert enrichment.operational_note == ""
 
 
 def test_deterministic_enrichment_keeps_sender_in_newsletter_summary():
@@ -67,3 +69,4 @@ def test_deterministic_enrichment_keeps_sender_in_newsletter_summary():
     assert enrichment.response_needed is False
     assert enrichment.summary_latest.lower().startswith("feed me")
     assert enrichment.bucket_hint == "Newsletters"
+    assert enrichment.operational_note == ""
