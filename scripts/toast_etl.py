@@ -29,6 +29,15 @@ sys.stderr.reconfigure(line_buffering=True)
 import requests
 from dotenv import load_dotenv
 
+from toast_api_common import (
+    DEFAULT_LOCATION_ID,
+    get_machine_client_token,
+    load_restaurant_map_from_env,
+    orders_headers,
+    request_with_retry,
+    resolve_location_id,
+)
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -40,6 +49,18 @@ TOAST_CLIENT_ID = os.environ["TOAST_CLIENT_ID"]
 TOAST_CLIENT_SECRET = os.environ["TOAST_CLIENT_SECRET"]
 TOAST_API_HOST = os.environ["TOAST_API_HOST"]
 TOAST_RESTAURANT_GUID = os.environ["TOAST_RESTAURANT_GUID"]
+TOAST_RESTAURANT_MAP_JSON = os.environ.get("TOAST_RESTAURANT_MAP_JSON", "").strip()
+TOAST_RESTAURANT_MAP = load_restaurant_map_from_env()
+if TOAST_RESTAURANT_MAP_JSON and TOAST_RESTAURANT_GUID not in TOAST_RESTAURANT_MAP:
+    raise RuntimeError(
+        "TOAST_RESTAURANT_MAP_JSON is set but does not include TOAST_RESTAURANT_GUID "
+        f"{TOAST_RESTAURANT_GUID}"
+    )
+LOCATION_ID = resolve_location_id(
+    TOAST_RESTAURANT_GUID,
+    TOAST_RESTAURANT_MAP,
+    default_location_id=DEFAULT_LOCATION_ID if not TOAST_RESTAURANT_MAP_JSON else None,
+)
 
 SUPABASE_URL = os.environ.get(
     "SUPABASE_URL", "https://zxqtclvljxvdxsnmsqka.supabase.co"
@@ -89,25 +110,17 @@ DAYPART_BREAKS = [
 # ---------------------------------------------------------------------------
 
 def toast_headers(token: str) -> dict:
-    return {
-        "Authorization": f"Bearer {token}",
-        "Toast-Restaurant-External-ID": TOAST_RESTAURANT_GUID,
-    }
+    return orders_headers(token, TOAST_RESTAURANT_GUID)
 
 
 def get_toast_token(session: requests.Session) -> str:
     """Authenticate with Toast and return a bearer token."""
-    resp = session.post(
-        f"{TOAST_API_HOST}/authentication/v1/authentication/login",
-        json={
-            "clientId": TOAST_CLIENT_ID,
-            "clientSecret": TOAST_CLIENT_SECRET,
-            "userAccessType": "TOAST_MACHINE_CLIENT",
-        },
-        timeout=30,
+    return get_machine_client_token(
+        session,
+        TOAST_API_HOST,
+        TOAST_CLIENT_ID,
+        TOAST_CLIENT_SECRET,
     )
-    resp.raise_for_status()
-    return resp.json()["token"]["accessToken"]
 
 
 def fetch_config_lookups(session: requests.Session, token: str) -> dict:
@@ -134,28 +147,6 @@ def fetch_config_lookups(session: requests.Session, token: str) -> dict:
     return lookups
 
 
-def _request_with_retry(session, method, url, max_retries=3, **kwargs):
-    """Make an HTTP request with retry on timeout/5xx errors."""
-    kwargs.setdefault("timeout", 90)
-    for attempt in range(max_retries):
-        try:
-            resp = getattr(session, method)(url, **kwargs)
-            if resp.status_code >= 500 and attempt < max_retries - 1:
-                wait = 2 ** attempt
-                print(f"    Server error {resp.status_code}, retrying in {wait}s...", file=sys.stderr)
-                time.sleep(wait)
-                continue
-            return resp
-        except requests.exceptions.Timeout:
-            if attempt < max_retries - 1:
-                wait = 2 ** attempt
-                print(f"    Timeout, retrying in {wait}s (attempt {attempt + 2}/{max_retries})...", file=sys.stderr)
-                time.sleep(wait)
-            else:
-                raise
-    return resp
-
-
 def fetch_order_guids(
     session: requests.Session, token: str, biz_date: str
 ) -> list[str]:
@@ -170,11 +161,12 @@ def fetch_order_guids(
     seen = set()
     page = 0
     while True:
-        resp = _request_with_retry(
+        resp = request_with_retry(
             session, "get",
             f"{TOAST_API_HOST}/orders/v2/orders",
             headers=headers,
             params={"businessDate": biz_date, "page": page, "pageSize": 100},
+            output_stream=sys.stderr,
         )
         if resp.status_code != 200:
             if resp.status_code == 404:
@@ -201,10 +193,11 @@ def fetch_order_detail(
 ) -> dict | None:
     """Fetch a single order's full details."""
     headers = toast_headers(token)
-    resp = _request_with_retry(
+    resp = request_with_retry(
         session, "get",
         f"{TOAST_API_HOST}/orders/v2/orders/{guid}",
         headers=headers,
+        output_stream=sys.stderr,
     )
     if resp.status_code == 200:
         return resp.json()
@@ -305,7 +298,7 @@ def resolve_guid(ref: dict | None, lookup: dict) -> str:
     return lookup.get(guid, "")
 
 
-def transform_order(order: dict, lookups: dict) -> dict | None:
+def transform_order(order: dict, lookups: dict, location_id: str) -> dict | None:
     """Transform a Toast API order into our orders table row."""
     guid = order.get("guid")
     if not guid:
@@ -328,7 +321,6 @@ def transform_order(order: dict, lookups: dict) -> dict | None:
 
     # Channel classification via config lookup
     dining_name = resolve_guid(order.get("diningOption"), lookups.get("diningOptions", {}))
-    rev_name = resolve_guid(order.get("revenueCenter"), lookups.get("revenueCenters", {}))
     channel, channel_group = classify_channel(dining_name)
     daypart = classify_daypart(et_hour)
 
@@ -373,7 +365,7 @@ def transform_order(order: dict, lookups: dict) -> dict | None:
 
     return {
         "toast_order_id": guid,
-        "location_id": "kent_ave",
+        "location_id": location_id,
         "order_date": order_date,
         "order_time": order_time,
         "opened_at": opened.isoformat(),
@@ -391,8 +383,15 @@ def transform_order(order: dict, lookups: dict) -> dict | None:
         "guest_count": guest_count,
         "item_count": item_count,
         "payment_type": payment_type,
-        "raw_data": order,
     }
+
+
+def parse_business_date(value) -> int | None:
+    """Return a YYYYMMDD integer when Toast provides a business date-like field."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    return int(text) if len(text) == 8 and text.isdigit() else None
 
 
 def extract_order_items(order: dict, location_id: str, lookups: dict) -> list[dict]:
@@ -470,6 +469,45 @@ def extract_order_items(order: dict, location_id: str, lookups: dict) -> list[di
     return items
 
 
+def extract_payments(order: dict, location_id: str, restaurant_guid: str) -> list[dict]:
+    """Extract check-level Toast payment records for card-fingerprint joins."""
+    payments = []
+    order_guid = order.get("guid")
+    if not order_guid:
+        return payments
+
+    for check in order.get("checks", []):
+        check_guid = check.get("guid")
+        if not check_guid:
+            continue
+
+        for payment in check.get("payments", []):
+            payment_guid = payment.get("guid")
+            if not payment_guid:
+                continue
+            paid_dt = parse_toast_datetime(payment.get("paidDate"))
+
+            payments.append({
+                "payment_guid": payment_guid,
+                "check_guid": check_guid,
+                "order_guid": order_guid,
+                "restaurant_guid": restaurant_guid,
+                "location_id": location_id,
+                "type": payment.get("type"),
+                "amount": parse_amount(payment.get("amount")),
+                "tip_amount": parse_amount(payment.get("tipAmount")),
+                "card_type": payment.get("cardType"),
+                "card_entry_mode": payment.get("cardEntryMode"),
+                "payment_status": payment.get("paymentStatus"),
+                "paid_date": paid_dt.isoformat() if paid_dt else None,
+                "paid_business_date": parse_business_date(
+                    payment.get("paidBusinessDate") or payment.get("businessDate")
+                ),
+            })
+
+    return payments
+
+
 # ---------------------------------------------------------------------------
 # Supabase helpers
 # ---------------------------------------------------------------------------
@@ -493,9 +531,6 @@ def upsert_orders(session: requests.Session, rows: list[dict]) -> int:
     loaded = 0
     for i in range(0, len(rows), BATCH_SIZE):
         batch = rows[i : i + BATCH_SIZE]
-        for row in batch:
-            if "raw_data" in row and isinstance(row["raw_data"], dict):
-                row["raw_data"] = json.dumps(row["raw_data"])
         resp = session.post(url, json=batch, headers=headers, timeout=60)
         if resp.status_code in (200, 201):
             loaded += len(batch)
@@ -522,6 +557,28 @@ def upsert_order_items(session: requests.Session, rows: list[dict]) -> int:
             loaded += len(batch)
         else:
             print(f"  Items upsert error (batch {i//BATCH_SIZE}): {resp.status_code} - {resp.text[:300]}", file=sys.stderr)
+    return loaded
+
+
+def upsert_payments(session: requests.Session, rows: list[dict]) -> int:
+    """Upsert Toast payment rows into Supabase. Returns count of rows sent."""
+    if not rows:
+        return 0
+    url = f"{SUPABASE_URL}/rest/v1/toast_payments?on_conflict=payment_guid"
+    headers = supabase_headers()
+
+    loaded = 0
+    for i in range(0, len(rows), BATCH_SIZE):
+        batch = rows[i : i + BATCH_SIZE]
+        resp = session.post(url, json=batch, headers=headers, timeout=60)
+        if resp.status_code in (200, 201):
+            loaded += len(batch)
+        else:
+            print(
+                f"  Payments upsert error (batch {i//BATCH_SIZE}): "
+                f"{resp.status_code} - {resp.text[:300]}",
+                file=sys.stderr,
+            )
     return loaded
 
 
@@ -559,6 +616,10 @@ def run_date_range(start: str, end: str) -> None:
     print("Authenticating with Toast API...", file=sys.stderr)
     token = get_toast_token(session)
     print("Authenticated.", file=sys.stderr)
+    print(
+        f"Using restaurant {TOAST_RESTAURANT_GUID} -> location_id {LOCATION_ID}.",
+        file=sys.stderr,
+    )
 
     print("Fetching config lookups...", file=sys.stderr)
     lookups = fetch_config_lookups(session, token)
@@ -575,6 +636,7 @@ def run_date_range(start: str, end: str) -> None:
     end_dt = datetime.strptime(end, "%Y-%m-%d")
     total_orders = 0
     total_items = 0
+    total_payments = 0
 
     while current <= end_dt:
         date_str = current.strftime("%Y-%m-%d")
@@ -591,30 +653,46 @@ def run_date_range(start: str, end: str) -> None:
             # Transform
             order_rows = []
             all_item_rows = []
+            all_payment_rows = []
             for raw in raw_orders:
-                order_row = transform_order(raw, lookups)
+                order_row = transform_order(raw, lookups, LOCATION_ID)
                 if order_row:
                     order_rows.append(order_row)
                     item_rows = extract_order_items(raw, order_row["location_id"], lookups)
+                    payment_rows = extract_payments(
+                        raw,
+                        order_row["location_id"],
+                        TOAST_RESTAURANT_GUID,
+                    )
                     all_item_rows.extend(item_rows)
+                    all_payment_rows.extend(payment_rows)
 
             # Upsert to Supabase
             orders_loaded = upsert_orders(session, order_rows)
             items_loaded = upsert_order_items(session, all_item_rows)
+            payments_loaded = upsert_payments(session, all_payment_rows)
 
             total_orders += orders_loaded
             total_items += items_loaded
-            print(f"  Loaded {orders_loaded} orders, {items_loaded} items", file=sys.stderr)
+            total_payments += payments_loaded
+            print(
+                f"  Loaded {orders_loaded} orders, {items_loaded} items, "
+                f"{payments_loaded} payments",
+                file=sys.stderr,
+            )
 
             log_pipeline_run(
                 session,
                 date_str,
                 "success",
-                orders_loaded + items_loaded,
+                orders_loaded + items_loaded + payments_loaded,
                 metadata={
                     "orders": orders_loaded,
                     "items": items_loaded,
+                    "payments": payments_loaded,
                     "api_count": len(raw_orders),
+                    "restaurant_guid": TOAST_RESTAURANT_GUID,
+                    "location_id": LOCATION_ID,
                 },
             )
 
@@ -626,7 +704,11 @@ def run_date_range(start: str, end: str) -> None:
         current += timedelta(days=1)
         time.sleep(0.5)
 
-    print(f"\nDone. Total: {total_orders} orders, {total_items} items.", file=sys.stderr)
+    print(
+        f"\nDone. Total: {total_orders} orders, {total_items} items, "
+        f"{total_payments} payments.",
+        file=sys.stderr,
+    )
 
 
 def main():

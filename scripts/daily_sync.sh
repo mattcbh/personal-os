@@ -28,6 +28,14 @@ else
     log "ERROR: Toast ETL failed (exit code $?)."
 fi
 
+# Toast Analytics ETL
+log "Running Toast Analytics ETL..."
+if python3 "$SCRIPT_DIR/toast_analytics_etl.py" --rolling-days 3 2>> "$LOG_FILE"; then
+    log "Toast Analytics ETL complete."
+else
+    log "ERROR: Toast Analytics ETL failed (exit code $?)."
+fi
+
 # Weather ETL
 log "Running Weather ETL..."
 if python3 "$SCRIPT_DIR/weather_etl.py" --date "$DATE" 2>> "$LOG_FILE"; then

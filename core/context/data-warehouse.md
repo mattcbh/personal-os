@@ -1,6 +1,6 @@
-## PnT Data Warehouse (Supabase)
+## Corner Booth Holdings Warehouse (Supabase)
 
-Restaurant analytics data warehouse for Pies 'n' Thighs in Supabase (project: `zxqtclvljxvdxsnmsqka`).
+Restaurant analytics warehouse for Corner Booth Holdings in Supabase (project: `zxqtclvljxvdxsnmsqka`). Raw tables stay source-native by system; CBH reporting happens in canonical fact views.
 
 **Current tables:**
 
@@ -16,11 +16,26 @@ Restaurant analytics data warehouse for Pies 'n' Thighs in Supabase (project: `z
 | time_punches | ~7,669 | 7shifts API (individual clock in/out, 60 employees) |
 | invoices | ~1,500 | MarginEdge API (PnT + Heap's, Nov 2024 - present) |
 | invoice_items | ~11,000 | MarginEdge API (line items with GL categories) |
+| dim_company / dim_brand / dim_site / dim_location / location_source_map | New | CBH org model + source-system location mappings |
+| square_locations | New | Square Locations API landing table |
+| square_orders | New | Square Orders API raw orders for Heap's |
+| square_order_line_items | New | Square order line items |
+| square_payments | New | Square Payments API landing table |
+| square_refunds | New | Square refunds / payment refunds |
+| square_customers | New | Square Customers API landing table |
+| square_catalog_items / square_catalog_variations | New | Square catalog item + variation reference data |
+| square_team_members | New | Square team member roster |
+| square_shifts | New | Square Labor timecards / shifts |
+| square_inventory_counts | Optional | Square inventory counts when inventory sync is enabled |
+| square_gift_cards | Optional | Reserved for future Square gift card sync |
+| square_loyalty_events | Optional | Reserved for future Square loyalty sync |
 | transaction_detail | ~62,000 | SystematIQ xlsx + QBO API (FY2024-FY2026). `source` column: `'systematiq'` or `'qbo'` |
 | fiscal_periods | 25 | SystematIQ (FY2024-FY2026 P1, 4-4-5 periods) |
 | menu_items | 194 | Toast Menus API |
 | customers | ~34,000 | Owner.com CSV export + DoorDash customer enrichment (email contacts, opt-ins, loyalty) |
 | toast_customers | ~50,106 | Extracted from orders (3,797 real, 46,309 delivery proxies). Note: orders.raw_data column was dropped Feb 2026. |
+| toast_guest_payments | — | Toast Analytics API guest payments (`payment_guid`, `order_guid`, `card_fingerprint`, `location_id`). Anonymous card-fingerprint layer for payment/order joins. |
+| toast_payments | — | Check-level payments extracted from Toast Orders API (`payment_guid`, `check_guid`, `order_guid`, payment metadata). |
 | billcom_se_transactions | 214 | Bill.com S&E API (credit card transactions, CLEAR only). 5 cardholders, $44.8K, Jun 2025 - present. |
 | toast_guestbook | — | Toast Guestbook Excel export (export pipeline broken, needs fix — Toast did NOT remove the feature) |
 | mailchimp_campaigns | — | Mailchimp sent campaigns with metadata, type tags, open/click rates |
@@ -30,11 +45,14 @@ Restaurant analytics data warehouse for Pies 'n' Thighs in Supabase (project: `z
 | toast_tables | 18 | Toast table configuration (name, section, GUID). Source: Toast Config API. Upsert key: table_guid, location_id |
 | toast_reservations | — | Toast reservation confirmations parsed from forwarded emails. Upsert key: confirmation_number, location_id |
 | weekly_food_cost | — | Inventory-based weekly COGS (MarginEdge Food Usage Report CSV or manual). Upsert key: location_id, week_start. Used by monday_report.py Prime Margin. |
+| foot_traffic_events | — | Raw UniFi Protect smart-detection events for PnT Park Slope. One row per event id, with ET-derived event_date/hour, optional crossing line + direction, and raw JSON for audit/debug. |
+| foot_traffic_hourly | — | Hourly street-line traffic rollup by camera/date/hour/direction. Door-threshold lines are excluded here and analyzed from raw events instead, so heatmaps/opportunity views stay storefront-focused. |
+| foot_traffic_cameras | 4 | Camera dimension for PnT Park Slope, PnT Williamsburg door-only, and Heap's foot traffic (`flatbush_cam`, `stmarks_cam`, `williamsburg_front_door_cam`, `heaps_7thave_cam`), with UniFi device ids and crossing-line definitions when known. |
 | customer_changes | — | Audit trail for Owner delta/CDC changes (DDL pending on Supabase) |
 | pipeline_runs | — | ETL audit log |
 | mv_customer_segments | ~32,475 | Materialized view joining customers + orders + order_items. Precomputed segment tiers (frequency, recency, spend), item affinity. Applied 2026-02-19. Refresh daily with CONCURRENTLY. |
 
-**SQL views:** `v_daily_sales`, `v_weather_sales`, `v_menu_performance`, `v_labor_sales`, `v_food_cost_daily`, `v_customer_segments`, `v_catering_contacts`, `v_mailchimp_segments`, `v_engagement_scores`, `v_email_affinity`, `v_weekly_pl_summary`, `v_campaign_attribution`, `v_campaign_performance`, `v_customer_survival`, `v_menu_item_retention`, `v_revenue_concentration`, `v_customer_onboarding`, `v_financials_best`, `v_transactions_best`, `v_data_freshness`
+**SQL views:** Existing PnT views remain in place. New CBH views: `fact_orders_cbh`, `fact_order_items_cbh`, `fact_payments_cbh`, `fact_customers_cbh`, `fact_labor_daily_cbh`, `fact_sales_daily_cbh`, `v_pnt_sales_daily`, `v_heaps_sales_daily`, `v_cbh_sales_daily`. New Park Slope / Heap's foot-traffic views: `v_foot_traffic_daily`, `v_capture_rate`, `v_store_entry_daily`, `v_store_entry_hourly`, `v_traffic_hourly_heatmap`, `v_traffic_opportunity`.
 
 **Access control roles:** `marketing_readonly` (customer/order/review data), `finance_readonly` (financials/labor/transaction detail), `ownership_readonly` (curated dashboard views only)
 
@@ -42,14 +60,22 @@ Restaurant analytics data warehouse for Pies 'n' Thighs in Supabase (project: `z
 
 | Script | Status | What it does |
 |--------|--------|-------------|
-| `toast_etl.py` | Live (daily) | Pulls orders + items from Toast API. `--date YYYY-MM-DD` or `--date_start`/`--date_end` |
-| `weather_etl.py` | Live (daily) | Pulls daily weather from Visual Crossing. `--forecast` (15-day lookahead), `--normals` (historical averages, 366 days). Same date CLI args for obs. |
+| `cbh_warehouse.py` | Live (shared config) | Canonical company/brand/location/site metadata, legacy alias normalization, and source-location map parsing for Toast/Square ETLs. |
+| `toast_etl.py` | Live (daily) | Pulls orders + items from Toast Orders API. Uses canonical `williamsburg` location ids and supports `TOAST_RESTAURANT_MAP_JSON` for multi-location Toast mapping. |
+| `square_etl.py` | Implemented (credentials pending) | Direct Square API sync for Heap's: locations, orders, line items, payments, refunds, catalog, customers, team members, timecards, and optional inventory counts. Default run is a rolling 3-day replay ending yesterday. |
+| `toast_analytics_etl.py` | Ready | Pulls anonymous guest payments from Toast Analytics API into `toast_guest_payments`. Default run is a rolling 3-day replay ending yesterday; supports `--date`, `--backfill START END`, and `--full-backfill`. |
+| `weather_etl.py` | Live (daily) | Pulls daily weather from Visual Crossing. Raw weather remains keyed to the shared `williamsburg` weather zone; CBH facts join through `dim_location.weather_zone_id`. |
+| `test_unifi_api.py` | Ready | Validates Park Slope UniFi auth paths. Private API mode checks historical event access; native API-key mode checks camera metadata plus a short public events-websocket probe. Current `uiprotect` still needs direct host reachability for historical backfills. |
+| `foot_traffic_etl.py` | Ready | Loads Park Slope UniFi Protect line-crossing events into `foot_traffic_events`, regenerates `foot_traffic_hourly`, supports `--date`, `--date_start/end`, `--rollup-only`, `--dry-run`, and logs every run to `pipeline_runs`. Poll mode still requires direct UNVR reachability; when the Cloudflare webhook path is live, schedule this script in `--rollup-only` mode. |
+| `foot_traffic_rollup_hourly.sh` | Ready | Hourly wrapper around `foot_traffic_etl.py --rollup-only`. Intended for the Mac Mini so dashboards refresh throughout the day without rerunning the full daily warehouse sync. |
+| `foot_traffic_dashboard.py` | Ready | Queries the foot-traffic views and writes self-contained HTML dashboards for `cbh-dashboards/pnt/`: overview, capture rate, traffic heatmap, and signage A/B template. |
+| `workers/unifi-protect-webhook/` | Ready | Cloudflare Worker that receives outbound UniFi Protect Alarm Manager webhooks and writes normalized rows straight to Supabase `foot_traffic_events`. Preferred remote-ingest path when the Mac Mini cannot reach the restaurant LAN. Live mappings now cover PnT Park Slope plus Heap's 7th Ave directional alarms. |
 | `sevenshifts_etl.py` | Live (daily) | Pulls labor data from 7shifts. Auto-detects plan tier (reports vs punches). `--list-locations` to verify mapping. |
 | `google_reviews_etl.py` | Live (weekly) | Pulls Google reviews via Outscraper. `--full` for complete re-pull, `--dry-run` to preview. |
 | `marginedge_etl.py` | Live (daily) | Food cost/invoices from MarginEdge API. PnT + Heap's. `--entity pnt\|heaps`, `--csv PATH` for CSV fallback |
 | `billcom_etl.py` | Live (daily) | AP/expenses + S&E credit card transactions from Bill.com (PnT only). `--date`, `--date_start/end`, `--skip-ap`, `--skip-se`, `--dry-run` |
 | `qbo_etl.py` | Live | P&L, Balance Sheet, Transaction Detail direct from QBO API (PnT only). `--setup`, `--current`, `--all-open`, `--period/--fiscal-year`, `--report pl\|bs\|detail\|all`, `--dry-run`, `--force` |
-| `load_financials.py` | Working (manual) | Parses SystematIQ Excel workbooks (P&L). `--file PATH` |
+| `load_financials.py` | Working (manual) | Parses SystematIQ Excel workbooks (P&L). Supports `--entity pnt|heaps|cbh`, canonical location ids, and writes `source='systematiq'`. |
 | `load_transaction_detail.py` | Working (manual) | Loads Transaction Detail by Account xlsx. `--file PATH --dry-run`. Supports 2024 and 2025+ formats. |
 | `reviews_etl.py` | Working (manual) | BirdEye XLSX import. `--file PATH --dry-run` |
 | `monday_report.py` | Working (manual) | Weekly narrative report. Includes Prime Margin (COGS + four-wall labor + prime cost vs PY) and multi-week trend detection (3+ week comp streak alerts). |
@@ -65,12 +91,13 @@ Restaurant analytics data warehouse for Pies 'n' Thighs in Supabase (project: `z
 | `catering_platforms_etl.py` | Ready (manual) | Loads Forkable/ParkDay/Dlivrd CSVs. `--file PATH --source forkable --dry-run` |
 | `mailchimp_sync.py` | Live | Syncs customer segments + engagement scores to Mailchimp. `--dry-run`, `--status`, `--setup` |
 | `mailchimp_engagement_etl.py` | Live (daily) | Pulls Mailchimp engagement data (campaigns, opens/clicks, member stats). `--dry-run`, `--status`, `--campaigns-only`, `--members-only` |
-| `daily_sync.sh` | Repo snapshot only | Checked-in script is not the authoritative production job list. Use `pipeline_runs` plus the Mac Mini launchd setup as the source of truth until repo drift is reconciled. |
+| `daily_sync.sh` | Repo snapshot only | Checked-in script now includes Park Slope foot traffic rollups after Toast. In webhook mode it runs `foot_traffic_etl.py --rollup-only`, and it prefers `.venv/bin/python` when present so the Mini can run `uiprotect` under Python 3.11+. Production Mini job list still needs reconciliation before assuming parity with the checked-in script. |
+| `com.pnt.foot-traffic-rollup-hourly.plist` | Live on brain | Dedicated hourly launch agent that runs `foot_traffic_rollup_hourly.sh` at the top of each hour. Keeps `foot_traffic_hourly` fresh between daily sync runs. |
 | `weekly_reviews_sync.sh` | Ready | Runs Google reviews ETL weekly. |
 | `com.pnt.daily-sync.plist` | Installed | launchd on Mac Mini, runs daily at 4 AM |
 | `com.pnt.weekly-se-sync.plist` | Retired | Was Sundays 4 AM S&E sync; moved to daily sync (volume is small, ~10s per run) |
 
-**Credentials:** `.env.toast` in repo root (gitignored). Contains keys for Toast, Supabase, Visual Crossing, 7shifts, Outscraper/Google, MarginEdge, Bill.com, QBO, Owner.com, Gmail SMTP, Mailchimp. QBO tokens stored separately in `data/qbo-tokens.json` (refresh_token changes on every use).
+**Credentials:** `.env.toast` in repo root (gitignored). Existing creds unchanged. New Square contract: `SQUARE_ACCESS_TOKEN`, `SQUARE_ENV`, `SQUARE_LOCATION_MAP_JSON`, optional `SQUARE_API_VERSION`, `SQUARE_WEBHOOK_SIGNATURE_KEY`, `SQUARE_BACKFILL_START`, `SQUARE_DEFAULT_LOCATION_ID`, `SQUARE_SYNC_INVENTORY`. Toast Analytics still expects `TOAST_ANALYTICS_CLIENT_ID`, `TOAST_ANALYTICS_CLIENT_SECRET`, `TOAST_ANALYTICS_API_HOST`, and `TOAST_RESTAURANT_MAP_JSON` (`{"<restaurantGuid>":"<location_id>"}`). Foot traffic adds `UNIFI_PROTECT_HOST`, `UNIFI_PROTECT_PORT`, `UNIFI_PROTECT_USERNAME`, `UNIFI_PROTECT_PASSWORD`, `UNIFI_PROTECT_VERIFY_SSL`, optional `UNIFI_CAMERA_MAP_JSON`, and currently assumes a repo-local Python 3.11+ virtualenv because `uiprotect` does not run on the Mini's stock Python 3.9.
 
 **7shifts details:**
 - Company ID: 272244, Location: 339083 (Pies'n'Thighs → williamsburg)
@@ -92,6 +119,7 @@ Restaurant analytics data warehouse for Pies 'n' Thighs in Supabase (project: `z
 - Orders table has `table_guid` column (dine-in only, nullable). Links to `toast_tables` reference table. 89% of dine-in orders have table assignments. Added Feb 14, 2026.
 - Customer identity fields (email, phone, name, guid) are populated directly during ETL from the Toast API response. The `orders.raw_data` JSONB column was dropped Feb 19, 2026 (was 2.3 GB / 59% of DB) to fix Disk IO Budget depletion.
 - **toast_etl.py uses pure upsert** (no delete-before-insert). ON CONFLICT UPDATE handles idempotent daily loads.
+- Card fingerprints stay anonymous in v1. Use `toast_guest_payments` + `toast_payments` + `v_card_fingerprint_orders` to attach them to existing order/customer fields without merging into `customers`.
 - Toast Guests API does NOT exist. CRM API deprecated. Guestbook data only via Excel export from Toast web UI.
 - 3P proxy emails are NOT marketable: DoorDash (`dd.toast.orders+*@gmail.com`), UberEats (`ubersupport*@uber.com`), GrubHub (`*@internal.grubhub.com`). Also: `@ezcater.com`, `@ritual.co`, `@forkable.com`
 - toast_customers table: 50,106 total (3,797 real, 46,309 delivery proxies). 1,771 matched to Owner by email.
@@ -109,6 +137,8 @@ Restaurant analytics data warehouse for Pies 'n' Thighs in Supabase (project: `z
   - `discount_amount` = promo/comp discounts applied
 - CSV-loaded orders use short numeric `toast_order_id` (e.g., "12345"). API-loaded orders use full GUIDs.
 - Toast API ignores pagination params and returns all GUIDs in one response. The script handles this with dedup.
+- Location mapping for Toast is now driven by `TOAST_RESTAURANT_MAP_JSON`. If that env var is absent, ETLs fall back to the canonical single-location mapping `TOAST_RESTAURANT_GUID -> williamsburg`.
+- Shared-data rule: raw weather stays a single Brooklyn lookup keyed to `williamsburg`; CBH facts use `dim_location.weather_zone_id` so PnT Williamsburg, PnT Park Slope, and Heap's Park Slope can all join the same weather series without confusing brand-specific facts.
 - SystematIQ uses a 4-4-5 fiscal calendar (not calendar months).
 - **Financials table query notes:**
   - `statement` column uses `'P&L'` (not `'pl'` or `'p&l'`). Case-sensitive.
