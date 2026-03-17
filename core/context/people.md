@@ -53,7 +53,51 @@ For any personal tax correspondence (NYS notices, estimated taxes, tax questions
 
 ### Auto-added by Project Refresh
 
-- **Vincenzo** - Industry contact — role unspecified. Contact: (201) 376-5032. Context: PnT Park Slope. Added 2026-03-11.
+- **Eric Beegun** - Retail Development Partners. Contact: eric.beegun@gmail.com. Context: PnT Park Slope. Added 2026-03-17.
+
+- **Jeff Phillips** - Business advisor / confidant. Contact: Unknown. Context: PnT Park Slope. Added 2026-03-17.
+
+- **Paul Sullivan** - Sales Rep, 12 Percent Imports. Contact: psullivan@12percentimports.com | +1 917-399-3620. Context: PnT Park Slope. Added 2026-03-16.
+
+- **Jenny Wong** - Accountant/Account Manager. Contact: Integrus (portal.integrusfirm.com). Context: PnT Park Slope. Added 2026-03-16.
+
+- **Charlotte Watkins** - Insurance Broker, With Coverage Insurance Services. Contact: team@withcoverage.com | 626-390-2833. Context: PnT Park Slope. Added 2026-03-16.
+
+- **Julie Samuels** - Executive Director, Tech:NYC. Contact: julie@technyc.org. Context: PnT Park Slope. Added 2026-03-16.
+
+- **Ofear Haiby** - Network / Security Technician. Contact: ofear@nofearsecurity.com. Context: PnT Park Slope. Added 2026-03-15.
+
+- **Satish Nagarajan** - Mathnasium (local community / education partner). Contact: satish.nagarajan@mathnasium.com. Context: PnT Park Slope. Added 2026-03-15.
+
+- **Caeli Smith** - Lily's co-parent / mother. Contact: caeli.smith@gmail.com. Context: Viola Lessons - Lily. Added 2026-03-14.
+
+- **Jessica Mitchell** - Team member, Heap's Ice Cream. Contact: jessica@heapsicecream.com. Context: PnT Park Slope. Added 2026-03-14.
+
+- **Gilli Rozynek** - Prospective Investor – Corner Booth Holdings. Contact: Unknown. Context: PnT Park Slope. Added 2026-03-14.
+
+- **David Nibley** - Unknown — possibly vendor or industry contact (Love Melty). Contact: dave@lovemelty.com. Context: PnT Park Slope. Added 2026-03-13.
+
+- **Tara** - Toast Account/Billing Contact. Contact: Via Toast — email thread CC'd on Pies 'n' Thighs invoice inquiry. Context: PnT Park Slope. Added 2026-03-13.
+
+- **Casey Schumpert** - Toast Sales / Restaurant Management Suite. Contact: casey.schumpert@toasttab.com. Context: PnT Park Slope. Added 2026-03-13.
+
+- **Darragh O'Sullivan** - Contractor – OSD Builders. Contact: darragh@osdbuilders.com | 201-844-5486. Context: PnT Park Slope. Added 2026-03-12.
+
+- **Andrey Teslya** - Hood Cleaning Vendor – Done Right HFS. Contact: andrey@donerighthfs.com. Context: PnT Park Slope. Added 2026-03-12.
+
+- **Justin Stefano** - President & Co-founder, Esspo (drink brand). Contact: justin@drinkesspo.com | (917) 539-7456. Context: PnT Park Slope. Added 2026-03-12.
+
+- **Jana Weill** - Marketing Manager, The Brooklyn Studio. Contact: jweill@brooklyn.studio. Context: PnT Park Slope. Added 2026-03-12.
+
+- **Sariyah Hernandez** - Inbound inquiry — purpose unknown (possible job applicant or catering lead). Contact: sariyahhernandez@gmail.com / +13479897458. Context: PnT Park Slope. Added 2026-03-12.
+
+- **Pierre (The Mark)** - Restaurant industry contact. Contact: +1 (917) 285-3799. Context: PnT Park Slope. Added 2026-03-12.
+
+- **Jack Mieszkalski** - Background Office — delegated point of contact for Hunter Douglas blinds. Contact: Unknown (cc'd on Hunter Douglas thread). Context: PnT Park Slope. Added 2026-03-12.
+
+- **Mauricio Varela** - Owner / Sales, NY City Blinds. Contact: mauricio@nycityblinds.com. Context: PnT Park Slope. Added 2026-03-12.
+
+- **Jason Cox** - Founder, PodRoll. Contact: jason@podroll.fm. Context: PnT Park Slope. Added 2026-03-11.
 
 - **Stratis Morfogen** - Restaurateur / The Restaurant Network NY. Contact: Unknown. Context: PnT Park Slope. Added 2026-03-11.
 
@@ -89,8 +133,6 @@ For any personal tax correspondence (NYS notices, estimated taxes, tax questions
 
 - **Toryanne Montuoro** - Singer Equipment — change order / invoicing contact (Park Slope buildout). Contact: tmontuoro@singerequipment.com. Context: PnT Park Slope. Added 2026-03-06.
 
-- **Noble Signs** - Signage vendor (window gilding, Park Slope). Contact: info@noblesigns.com. Context: PnT Park Slope. Added 2026-03-06.
-
 - **Erin Dreyfous** - Studio DXD — lighting (invoice contact). Contact: erin@studiodxd.com. Context: PnT Park Slope. Added 2026-03-06.
 
 - **Alexandra Goldberg** - Account manager, Mona Creative. Contact: alexandra@monacreative.co. Context: PnT Park Slope. Added 2026-03-06.
@@ -115,10 +157,6 @@ For any personal tax correspondence (NYS notices, estimated taxes, tax questions
 
 - **Matt Rosenstein** - Account lead, Bikky. Contact: matt@bikky.com. Context: PnT Park Slope. Added 2026-03-06.
 
-- **Jillian** - SystematiQ accounting contact for PnT. Contact: pies-n-thighs@systematiq.co. Context: PnT Park Slope. Added 2026-03-06.
-
-- **No Fear Security** - Network management and LTE vendor. Contact: info@nofearsecurity.com. Context: PnT Park Slope. Added 2026-03-06.
-
 - **Sinead Keane** - Breffni Mechanical — HVAC service coordinator. Contact: Sinead@breffnimech.com. Context: PnT Park Slope. Added 2026-03-06.
 
 - **Irene Kim** - Invoicing / TPP inspections. Contact: irenek.concept@gmail.com. Context: PnT Park Slope. Added 2026-03-06.
@@ -130,4 +168,3 @@ For any personal tax correspondence (NYS notices, estimated taxes, tax questions
 - **Jalean M. Rodriguez** - Done Right HFS — Ansul system / fire extinguisher vendor. Contact: jalean@donerighthfs.com. Context: PnT Park Slope. Added 2026-03-06.
 
 - **Richie Torres** - NYC Elected Official (Financial Services Committee); Bloomberg Fellowship cohort. Contact: Unknown. Context: PnT Real Estate. Added 2026-03-06.
-
