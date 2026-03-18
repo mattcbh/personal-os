@@ -17,7 +17,7 @@ This file defines where the system actually lives, how it syncs, and where chang
 | `personal-os` vault content | Laptop Git repo at `~/Obsidian/personal-os` | Laptop vault, Mini live vault, other synced clients | Obsidian Sync for live copies; Git from laptop only | Edit in the vault, then reconcile and commit from the laptop |
 | `automation-runtime-personal` | GitHub repo `automation-runtime-personal` | Laptop clone, Mini clone | Laptop push -> GitHub -> Mini poller (`poll-main.sh`) | Runtime code changes in the repo |
 | `automation-runtime-work` | GitHub repo `automation-runtime-work` | Laptop clone, Mini clone | Laptop push -> GitHub -> Mini poller (`poll-main.sh`) | Runtime code changes in the repo |
-| Machine config and local MCP server install source | GitHub repo `automation-machine-config` | Laptop clone, Mini clone | Laptop push -> GitHub -> manual pull/install on each machine | Machine config, bootstrap, status scripts |
+| Machine config and local MCP server install source | GitHub repo `automation-machine-config` | Laptop clone, Mini clone | Laptop push -> GitHub -> manual pull/install on each machine | Machine config, bootstrap, status scripts, system-health coordinator |
 | Codex core config | `automation-machine-config/bin/install-machine-config.sh` output | `~/.codex/config.toml` on each machine | Install script with role-specific rendering | Machine config repo |
 | Claude MCP baseline | `automation-machine-config/bin/install-machine-config.sh` output | `~/.mcp.json` on each machine | Install script with role-specific rendering | Machine config repo |
 | Shared vault skills | `personal-os/core/integrations/*/skills/*` | Vault on laptop and Mini | Obsidian Sync | Vault |
@@ -67,6 +67,6 @@ Use this table to decide where to make a change:
 | Vault docs, context, prompts, skills | `~/Obsidian/personal-os` | Obsidian Sync for live copies; Git commit from laptop |
 | Personal runtime job logic | `~/Projects/automation-runtime-personal` | Push to GitHub, let Mini poller deploy |
 | Work runtime job logic | `~/Projects/automation-runtime-work` | Push to GitHub, let Mini poller deploy |
-| Machine config or MCP defaults | `~/Projects/automation-machine-config` | Pull on target machine and run `install-machine-config.sh` |
+| Machine config, MCP defaults, or system-health coordinator | `~/Projects/automation-machine-config` | Pull on target machine and run `install-machine-config.sh` |
 | PnT warehouse code or launchd plists | `~/Projects/pnt-data-warehouse` | Manual Mini workflow |
 | macOS defaults, launchctl state, app auth, secret files | target machine home directory | Run directly on the target machine |

@@ -30,7 +30,6 @@ SCRIPTS=(
     "meeting-sync.sh"
     "transcript-backfill.sh"
     "telegram-bridge.sh"
-    "system-health.sh"
 )
 
 # All jobs to install
@@ -41,7 +40,6 @@ PLISTS=(
     "com.brain.meeting-sync"
     "com.brain.email-triage-v2-morning"
     "com.brain.email-triage-v2-evening"
-    "com.brain.system-health"
     "com.brain.email-monitor"
     "com.brain.project-refresh-morning"
     "com.brain.project-refresh-evening"
@@ -163,7 +161,6 @@ echo "4. Schedule overview:"
 echo "   5:00 AM  - Daily Digest (industry news + calendar)"
 echo "   5:35 AM  - Project Refresh (email + Beeper + Granola context into project briefs)"
 echo "   6:00 AM  - Email Triage v2 Morning (queue-backed inbox triage)"
-echo "   7:10 AM  - System Health (launchd + drift + single-instance checks)"
 echo "   8AM-6PM - Email Monitor (urgent email alerts via Telegram, every 2hrs)"
 echo "   Every 30m - Comms Ingest (email + Beeper event log)"
 echo "   Always  - Telegram Bridge (two-way Claude Code via Telegram)"

@@ -35,13 +35,15 @@ The live Mac Mini vault is an Obsidian Sync working copy, not a Git checkout. Th
 
 | Job | Schedule (ET) | Repo | Script | Plist |
 |---|---|---|---|---|
+| Runtime Poller (Personal) | Every 5 minutes | personal | `poll-main.sh` | `com.matthewlieber.automation-personal.poll-main.plist` |
 | Daily Digest | 5:00 AM daily | personal | `daily-digest.sh` | `com.matthewlieber.automation-personal.daily-digest.plist` |
 | Monthly Goals Review | Monday 9:00 AM, full run on first Monday only | personal | `monthly-goals-review.sh` | `com.matthewlieber.automation-personal.monthly-goals-review.plist` |
+| Runtime Poller (Work) | Every 5 minutes | work | `poll-main.sh` | `com.matthewlieber.automation-work.poll-main.plist` |
 | Project Refresh (AM) | 5:35 AM daily | work | `project-refresh.sh` | `com.matthewlieber.automation-work.project-refresh-morning.plist` |
 | Email Triage v2 (AM) | 6:00 AM daily | work | `email-triage-v2.sh` | `com.matthewlieber.automation-work.email-triage-v2-morning.plist` |
 | Email Triage v2 (PM) | 3:00 PM daily | work | `email-triage-v2.sh` | `com.matthewlieber.automation-work.email-triage-v2-evening.plist` |
 | Project Refresh (PM) | 2:35 PM daily | work | `project-refresh.sh` | `com.matthewlieber.automation-work.project-refresh-evening.plist` |
-| System Health | 7:10 AM daily | local | `system-health.sh` | `com.brain.system-health.plist` |
+| System Health | 7:10 AM daily | machine-config | `automation-machine-config/bin/system-health.sh` | `com.brain.system-health.plist` |
 | Email Monitor | 8:00,10:00,12:00,14:00,16:00,18:00 | work | `email-monitor.sh` | `com.matthewlieber.automation-work.email-monitor.plist` |
 | Comms Ingest | Every 30 minutes | work | `comms-ingest.sh` | `com.matthewlieber.automation-work.comms-ingest.plist` |
 | PnT Buildout Sync | 4:00 PM daily | work | `pnt-sync.sh` | `com.matthewlieber.automation-work.pnt-sync.plist` |
@@ -66,20 +68,21 @@ Superhuman helpers (run directly from Obsidian):
 - `ensure-superhuman.sh` — browser/session prep (archived)
 
 Utilities:
-- `system-health.sh` — system health checker
 - `chrome-cdp-helper.sh` — CDP helper utilities
 - `compare-machine-config.sh` — environment diff utility
 - `setup-on-brain.sh`, `setup-email-triage-v2-on-brain.sh` — one-time setup scripts
 
 ## System Health Coverage
 
-The daily `system-health.sh` launcher is a host-aware coordinator:
+The daily `system-health.sh` launcher is machine-config-owned and host-aware:
 - on the Mini (`brain`), it writes `core/state/system-health.json` and sends Telegram warnings
 - on the laptop, it writes `core/state/system-health-laptop.json` and does not send Telegram by default
 
-Reference plists:
-- Mini: `launchd-plists/com.brain.system-health.plist`
-- Laptop: `launchd-plists/com.matthewlieber.laptop.system-health.plist`
+Canonical code paths:
+- Runner: `~/Projects/automation-machine-config/bin/system-health.sh`
+- Audit: `~/Projects/automation-machine-config/bin/system_health_audit.py`
+- Mini plist template: `~/Projects/automation-machine-config/launchd/system-health/com.brain.system-health.plist.template`
+- Laptop plist template: `~/Projects/automation-machine-config/launchd/system-health/com.matthewlieber.laptop.system-health.plist.template`
 
 Operational policy:
 - Keep `com.brain.system-health` loaded on the Mini
@@ -90,7 +93,7 @@ It checks:
 - runtime repo health via `automation-runtime-personal/scripts/check-health.sh` and `automation-runtime-work/scripts/check-health.sh`
 - local PnT runtime basics (repo state, launchd labels, required files, working tree hygiene)
 - architecture drift via `scripts/audit_personal_os.py`
-- local automation syntax (`python3 -m compileall`, `bash -n`)
+- local automation syntax in the vault plus the machine-config-owned system-health runner
 - `core/state/` symlink integrity and key state freshness
 - Things/task hygiene: inconsistent task titles for the same Things ID, likely duplicate active tasks, and obvious punctuation spacing issues
 - on the laptop, repo/workspace sanity for the local authoring clones instead of the Mini-only launchd/runtime checks
@@ -99,7 +102,7 @@ MCP configs:
 - `mcp-configs/` — reference copies kept in the vault. Installed production MCP configs are rendered into the runtime repos under `.generated/mcp/`.
 
 Reference-only launchd plists:
-- `launchd-plists/` — archival/reference copies from the legacy `personal-os` runtime. Installed plists on the brain are rendered from the runtime repos and loaded into `~/Library/LaunchAgents/`.
+- `launchd-plists/` — archival/reference copies from the legacy `personal-os` runtime. Installed plists on the brain are now rendered from the runtime repos and `automation-machine-config`, then loaded into `~/Library/LaunchAgents/`.
 
 Legacy (completed, no longer scheduled):
 - `transcript-backfill.sh`, `transcript-backfill-fast.py` — completed Feb 2026
@@ -115,9 +118,10 @@ All runtime state lives in `core/state/`. Files there are symlinks to the canoni
 
 ## Logs
 
-Logs are written to the repo that runs the job, not to Obsidian:
+Runtime logs are written to the repo that runs the job; system-health still writes its visible summary logs into the vault:
 - Personal repo logs: `~/Projects/automation-runtime-personal/logs/`
 - Work repo logs: `~/Projects/automation-runtime-work/logs/`
+- System health logs: `~/Obsidian/personal-os/logs/`
 
 ## Drift Guardrail
 

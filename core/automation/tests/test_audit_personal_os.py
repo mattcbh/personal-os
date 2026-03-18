@@ -42,15 +42,15 @@ class AuditPersonalOsTests(unittest.TestCase):
             / "com.brain.project-refresh-morning.plist",
         )
 
-    def test_local_script_stays_in_vault(self) -> None:
+    def test_machine_config_script_resolves_outside_vault(self) -> None:
         path = MODULE.resolve_manifest_runtime_path(
             "system-health",
             "script",
-            "core/automation/system-health.sh",
+            "bin/system-health.sh",
         )
         self.assertEqual(
             path,
-            Path(__file__).resolve().parents[3] / "core/automation/system-health.sh",
+            Path.home() / "Projects" / "automation-machine-config" / "bin" / "system-health.sh",
         )
 
 

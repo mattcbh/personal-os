@@ -1,5 +1,5 @@
 version: 2
-last_updated: 2026-03-13
+last_updated: 2026-03-18
 owner: Matt Lieber
 description: Canonical runtime inventory for the Personal OS on the Mac Mini ("brain").
 
@@ -14,12 +14,24 @@ scheduler_policy:
 
 conventions:
   root: /Users/<user>/Obsidian/personal-os
+  machine_config_root: /Users/<user>/Projects/automation-machine-config
   knowledge_digest_dir: Knowledge/DIGESTS
   knowledge_transcript_dir: Knowledge/TRANSCRIPTS
   state_dir: core/state
   logs_dir: logs
 
 scheduled_jobs:
+  - id: personal-poll-main
+    enabled: true
+    schedule_local: "Every 5 minutes America/New_York"
+    launchd_label: com.matthewlieber.automation-personal.poll-main
+    script: scripts/poll-main.sh
+    launchd_plist: core/automation/launchd-plists/com.matthewlieber.automation-personal.poll-main.plist
+    outputs:
+      - logs/poll-main.log
+    state_files:
+      - .deploy/last-known-good-commit
+
   - id: daily-digest
     enabled: true
     schedule_local: "Daily 05:00 America/New_York"
@@ -43,6 +55,17 @@ scheduled_jobs:
       - logs/monthly-goals-review.log
     state_files:
       - core/state/monthly-goals-review-state.txt
+
+  - id: work-poll-main
+    enabled: true
+    schedule_local: "Every 5 minutes America/New_York"
+    launchd_label: com.matthewlieber.automation-work.poll-main
+    script: scripts/poll-main.sh
+    launchd_plist: core/automation/launchd-plists/com.matthewlieber.automation-work.poll-main.plist
+    outputs:
+      - logs/poll-main.log
+    state_files:
+      - .deploy/last-known-good-commit
 
   - id: project-refresh-morning
     enabled: true
@@ -165,8 +188,8 @@ scheduled_jobs:
     enabled: true
     schedule_local: "Daily 07:10 America/New_York"
     launchd_label: com.brain.system-health
-    script: core/automation/system-health.sh
-    launchd_plist: core/automation/launchd-plists/com.brain.system-health.plist
+    script: bin/system-health.sh
+    launchd_plist: launchd/system-health/com.brain.system-health.plist.template
     outputs:
       - logs/system-health.log
       - core/state/system-health.json
