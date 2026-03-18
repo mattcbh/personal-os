@@ -28,4 +28,4 @@ Granola MCP endpoint in `~/.mcp.json`:
 1. List recent meetings from MCP
 2. Compare against `core/state/granola-sync.json`
 3. Sync selected meetings to `Knowledge/TRANSCRIPTS/`
-4. Extract task candidates and optionally push selected tasks to Things
+4. Extract meeting-task candidates into review state and send a Telegram digest for explicit approval before creating Things tasks

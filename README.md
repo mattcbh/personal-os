@@ -48,7 +48,8 @@ The live Mac Mini vault is an Obsidian Sync working copy, not a Git checkout. Th
 | Comms Ingest | Every 30 minutes | work | `comms-ingest.sh` | `com.matthewlieber.automation-work.comms-ingest.plist` |
 | PnT Buildout Sync | 4:00 PM daily | work | `pnt-sync.sh` | `com.matthewlieber.automation-work.pnt-sync.plist` |
 | Weekly Follow-Up | Friday 4:00 PM | personal | `weekly-followup.sh` | `com.brain.weekly-followup.plist` |
-| Meeting Sync | 9:00 PM daily | personal | `meeting-sync.sh` | `com.brain.meeting-sync.plist` |
+| Meeting Sync (Main) | 5:15 PM daily | personal | `meeting-sync.sh --run-type main` | `com.matthewlieber.automation-personal.meeting-sync` |
+| Meeting Sync (Late) | 9:15 PM daily | personal | `meeting-sync.sh --run-type late` | `com.matthewlieber.automation-personal.meeting-sync-late` |
 | Telegram Bridge | KeepAlive / RunAtLoad | work | `telegram-bridge.sh` | `com.matthewlieber.automation-work.telegram-bridge.plist` |
 
 Scheduler host for all jobs above: Mac Mini only.

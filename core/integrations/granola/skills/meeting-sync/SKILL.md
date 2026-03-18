@@ -14,6 +14,7 @@ Canonical policy references:
 - Transcript folder: `~/Obsidian/personal-os/Knowledge/TRANSCRIPTS/`
 - Sync state file: `~/Obsidian/personal-os/core/state/granola-sync.json`
 - Pending tasks file: `~/Obsidian/personal-os/core/state/pending-tasks.md`
+- Meeting review state file: `~/Obsidian/personal-os/core/state/meeting-task-review.json`
 - Fast helper script: `~/Projects/automation-runtime-personal/core/automation/meeting-sync-fetch.py`
 
 ## Workflow
@@ -72,10 +73,11 @@ Parse the JSON report and summarize synced/failed meetings.
 
 ### 4) Extract task candidates
 
-From selected meetings, extract concrete action items from summary content first (and transcript text if needed).
-Show candidates and require explicit selection before writing.
+From selected meetings, extract concrete Matt-owned action items from summary content first (and transcript text if needed).
+For the scheduled automation, write candidates into meeting-task review state and send the Telegram digest for explicit approval.
+For interactive `/meeting-sync`, show the candidates and require explicit confirmation before creating Things tasks.
 
-For each selected task, append to `core/state/pending-tasks.md` under a meeting section:
+The scheduled runtime mirrors pending items into `core/state/pending-tasks.md` under meeting sections so unresolved items can be carried forward:
 
 ```markdown
 ## YYYY-MM-DD — Meeting Title
@@ -84,7 +86,15 @@ For each selected task, append to `core/state/pending-tasks.md` under a meeting 
 - [ ] Another task
 ```
 
-Do not push directly to Things in this skill. Morning planning reviews `pending-tasks.md`.
+Scheduled review happens through Telegram replies, not morning planning. Valid commands are:
+
+```text
+approve 1 3
+edit 2: revised task text
+reject 4
+```
+
+Approved items are appended to `things-sync/inbox.md` with `[things:new]` and then synced into Things.
 
 ## Rules
 
@@ -100,3 +110,4 @@ Do not push directly to Things in this skill. Morning planning reviews `pending-
 - If MCP returns authentication errors for `get_meetings`, verify Granola MCP connectivity first.
 - If transcript API returns empty/not found, keep summary-only file and mark synced.
 - If `--sync` reports failures, report failed meeting IDs and leave those IDs unsynced.
+- If unresolved meeting tasks exist with no new meetings, the 5:15 PM digest should still resend the carried-forward items.

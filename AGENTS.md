@@ -243,13 +243,9 @@ When user asks about tasks by priority (e.g., "show me my P0 tasks"):
 ## Daily Guidance
 
 - When answering "What should I work on today?" or similar morning prompts:
-  1. **First**, check `core/state/pending-tasks.md` for tasks extracted from yesterday's meetings
-     - If the file exists and has tasks, present them grouped by meeting
-     - Use AskUserQuestion with multiSelect so Matt can pick which tasks to add
-     - For each approved task, add to `things-sync/inbox.md` with `[things:new]` tag
-     - Remove approved and rejected tasks from pending-tasks.md (delete the file if empty)
-  2. **Then**, run `/things-sync` to push new tasks and get fresh task data
-  3. Read `things-sync/today.md` and suggest priorities
+  1. **First**, run `/things-sync` to push any approved tasks and get fresh task data
+  2. Read `things-sync/today.md` and suggest priorities
+  3. If `core/state/pending-tasks.md` still exists, treat it as unresolved meeting-task review state waiting on Telegram approval — do not auto-import those items during morning planning
 - Suggest no more than three focus tasks unless the user insists.
 - Flag overdue tasks and propose next steps or follow-up questions.
 
@@ -341,7 +337,7 @@ Route files based on type:
 
 **Always search `Knowledge/TRANSCRIPTS/` first** for past meetings. Do NOT use Granola MCP tools to search. All transcripts use format `YYYY-MM-DD Title.md` in one flat folder. All files now have raw `## Transcript` sections (backfill completed 2026-02-18).
 
-**Syncing:** Automated at 9 PM daily. Use `/meeting-sync` for manual mid-day syncs.
+**Syncing:** Automated at 5:15 PM ET for the main review digest and 9:15 PM ET for a late catch-up. Meeting-task approval happens by replying to the Telegram digest with explicit commands such as `approve 1 3`, `edit 2: ...`, or `reject 4`. Use `/meeting-sync` for a manual sync.
 
 ## MCP Quick Reference
 

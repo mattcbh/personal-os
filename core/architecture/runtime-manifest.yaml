@@ -173,15 +173,30 @@ scheduled_jobs:
 
   - id: meeting-sync
     enabled: true
-    schedule_local: "Daily 21:00 America/New_York"
+    schedule_local: "Daily 17:15 America/New_York"
     launchd_label: com.matthewlieber.automation-personal.meeting-sync
     script: core/automation/meeting-sync.sh
-    launchd_plist: core/automation/launchd-plists/com.brain.meeting-sync.plist
+    launchd_plist: core/automation/launchd-plists/com.matthewlieber.automation-personal.meeting-sync.plist
     outputs:
       - Knowledge/TRANSCRIPTS
       - logs/meeting-sync.log
     state_files:
       - core/state/granola-sync.json
+      - core/state/meeting-task-review.json
+      - core/state/pending-tasks.md
+
+  - id: meeting-sync-late
+    enabled: true
+    schedule_local: "Daily 21:15 America/New_York"
+    launchd_label: com.matthewlieber.automation-personal.meeting-sync-late
+    script: core/automation/meeting-sync.sh --run-type late
+    launchd_plist: core/automation/launchd-plists/com.matthewlieber.automation-personal.meeting-sync-late.plist
+    outputs:
+      - Knowledge/TRANSCRIPTS
+      - logs/meeting-sync.log
+    state_files:
+      - core/state/granola-sync.json
+      - core/state/meeting-task-review.json
       - core/state/pending-tasks.md
 
   - id: system-health
