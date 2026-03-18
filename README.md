@@ -75,7 +75,7 @@ Utilities:
 ## System Health Coverage
 
 The daily `system-health.sh` launcher is machine-config-owned and host-aware:
-- on the Mini (`brain`), it writes `core/state/system-health.json` and sends Telegram warnings
+- on the Mini (`brain`), it writes `core/state/system-health.json` and only sends Telegram for failures/emergencies by default
 - on the laptop, it writes `core/state/system-health-laptop.json` and does not send Telegram by default
 
 Canonical code paths:
