@@ -21,9 +21,9 @@ project/
 └── logs/            # Automation logs
 ```
 
-## Brain System
+## Mini System
 
-This Mac Mini serves as the "brain" - a persistent server for Claude Code sessions accessible from any device (MacBook, iPhone via Termius).
+The Mini is the persistent host for Claude Code sessions and live automations, accessible from other devices such as the Laptop and iPhone via Termius.
 
 For full system documentation, architecture, and troubleshooting, see:
 `~/.claude/brain-system.md`
@@ -35,7 +35,7 @@ For full system documentation, architecture, and troubleshooting, see:
 - **Downloads:** files received from elsewhere default to `Corner Booth Holdings/9- Personal Downloads/`
 - **Screenshots:** when Matt says "screenshot", default to Dropbox `~/Library/CloudStorage/Dropbox/Screenshots/`
 - **MCP servers:** `~/Projects/automation-machine-config/mcp-servers/` is the install source of truth. `~/mcp-servers/` is a convenience mirror/symlink.
-- **Session command:** `brain` (creates/attaches tmux session)
+- **Session command:** `brain` (legacy tmux helper that creates or attaches the main session)
 - **Detach:** `Ctrl-b d`
 - **Session name:** `claude`
 
@@ -44,6 +44,7 @@ For full system documentation, architecture, and troubleshooting, see:
 Use these files as the primary source of truth before relying on duplicated instructions in older notes:
 
 - System-of-record matrix and edit policy: `core/architecture/source-of-truth.md`
+- Canonical system architecture: `core/architecture/system-architecture.md`
 - PnT runtime inventory: `core/architecture/pnt-runtime-inventory.md`
 - PnT operator runbook: `core/architecture/pnt-operator-runbook.md`
 - Runtime inventory: `core/architecture/runtime-manifest.yaml`
@@ -55,7 +56,7 @@ Use these files as the primary source of truth before relying on duplicated inst
 
 When work touches code, scripts, machine config, or deployed automation behavior, check the owning GitHub-backed repo before editing vault docs.
 
-- `personal-os` is canonical for prompts, context docs, project briefs, workflow docs, and shared skill entrypoints.
+- The Vault repo/path at `~/Obsidian/personal-os` is canonical for prompts, context docs, project briefs, workflow docs, and shared skill entrypoints.
 - `automation-runtime-personal` is canonical for personal scheduled-job logic.
 - `automation-runtime-work` is canonical for work scheduled-job logic.
 - `automation-machine-config` is canonical for machine config, install scripts, and local MCP server code.
@@ -64,18 +65,18 @@ When work touches code, scripts, machine config, or deployed automation behavior
 
 ## Vault Authority And Reconciliation
 
-`personal-os` has a split operating model by design:
+The Vault has a split operating model by design:
 
-- **Laptop:** authoritative Git history and the only place where `personal-os` commits and pushes should happen.
-- **Mac Mini:** live Obsidian Sync working copy used by automations and remote sessions. It is intentionally **not** a Git checkout.
-- **Other synced devices:** may author vault changes, but those changes still reconcile back through the laptop Git repo.
+- **Laptop:** Git reconciliation authority and the only place where Vault commits and pushes should happen.
+- **Mini:** live Obsidian Sync working copy used by automations and remote sessions. It is intentionally **not** a Git checkout.
+- **Other synced devices:** may author Vault changes, but those changes still reconcile back through the Laptop Git repo.
 
 ### Reconciliation Workflow
 
-1. A vault edit may happen on the Mac Mini or another synced client.
-2. Obsidian Sync carries that change back to the laptop working tree.
-3. Review the change from the laptop repo with `git status` / `git diff`.
-4. Commit and push from the laptop repo when the change belongs in history.
+1. A vault edit may happen on the Mini or another synced client.
+2. Obsidian Sync carries that change back to the Laptop working tree.
+3. Review the change from the Laptop repo with `git status` / `git diff`.
+4. Commit and push from the Laptop repo when the change belongs in history.
 5. Never initialize Git inside the live Mini vault.
 
 ## Task System: Things 3
@@ -221,7 +222,7 @@ When creating tasks or helping with task content, **ALWAYS double-check facts**:
 - When processing backlog items, consider how each task relates to goals in `GOALS.md`.
 - If no goal fits, ask whether to create a new goal entry or clarify why the work matters.
 - Remind the user when active tasks do not support any current goals.
-- The recurring goals-review automation lives on the Mac Mini in `automation-runtime-personal`, not in Codex automation.
+- The recurring goals-review automation lives on the Mini in `automation-runtime-personal`, not in Codex automation.
 - Use `examples/workflows/monthly-goals-review.md` as the playbook for that automation and for manual reviews.
 - Preferred schedule: Monday morning, with the automation performing the full review on the first Monday of each month.
 - The automation should create a clear review artifact, not just send a passive reminder. It should write a goals-review report and create a Things task that points to the report.
@@ -255,7 +256,7 @@ Live schedules and runtime ownership are documented in `core/automation/README.m
 
 - This vault holds prompts, context, workflow docs, and shared skills.
 - Runtime job logic lives in the owning GitHub repo or production codebase.
-- Mac Mini automations should be added to `automation-runtime-personal`, `automation-runtime-work`, or `pnt-data-warehouse` as appropriate.
+- Mini automations should be added to `automation-runtime-personal`, `automation-runtime-work`, or `pnt-data-warehouse` as appropriate.
 - Manual skills such as `/things-sync`, `/meeting-sync`, `/pnt-sync`, `/cos`, `/health`, and `/cfo-agent` can be run interactively.
 
 ## Email Policy
@@ -295,7 +296,7 @@ Do NOT use `open -a "Google Chrome"` — Matt connects remotely via SSH.
 
 **Share URLs directly** — do not use URL shorteners. Just paste the full link.
 
-**Never use `open -a "Google Chrome"`** to share links — Matt connects remotely via SSH, so `open` runs on the Mac Mini, not his laptop.
+**Never use `open -a "Google Chrome"`** to share links — Matt connects remotely via SSH, so `open` runs on the Mini, not his Laptop.
 
 ## File Storage Rules
 
@@ -624,7 +625,7 @@ Use a hybrid model:
 
 2. **Put supporting code in the owning GitHub repo** when the skill needs scripts, templates, tests, CI, or collaborator changes. The skill should point to that code rather than embedding production logic in the vault.
 
-3. **Create symlinks on BOTH machines** (brain + MacBook):
+3. **Create symlinks on both machines** (Mini and Laptop):
    ```bash
    ln -sf ~/Obsidian/personal-os/core/integrations/<app-name>/skills/<skill-name> ~/.claude/skills/<skill-name>
    ```

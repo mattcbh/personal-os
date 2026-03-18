@@ -1,24 +1,64 @@
-version: 2
+version: 3
 last_updated: 2026-03-18
 owner: Matt Lieber
-description: Canonical runtime inventory for the Personal OS on the Mac Mini ("brain").
+description: Canonical runtime inventory for the Vault, runtimes, and Mini scheduler layer.
 
 scheduler_policy:
-  canonical_scheduler_host: homeserver@brain
-  laptop_policy: "No Matt-managed launchd schedulers should be loaded on the laptop."
-  install_rule: "Run runtime bootstrap installers only on the Mac Mini. Use --render-only on the laptop."
-  system_health_label_on_brain: com.brain.system-health
+  canonical_scheduler_host_alias: homeserver@brain
+  canonical_scheduler_host_term: Mini
+  laptop_policy: "No Matt-managed launchd schedulers should be loaded on the Laptop."
+  install_rule: "Run runtime bootstrap installers only on the Mini. Use --render-only on the Laptop."
+  system_health_label_on_mini: com.brain.system-health
   system_health_label_on_laptop: com.matthewlieber.laptop.system-health
   system_health_laptop_status: disabled
-  verified_on: 2026-03-13
+  verified_on: 2026-03-18
 
 conventions:
-  root: /Users/<user>/Obsidian/personal-os
+  vault_root: /Users/<user>/Obsidian/personal-os
   machine_config_root: /Users/<user>/Projects/automation-machine-config
+  personal_runtime_root: /Users/<user>/Projects/automation-runtime-personal
+  work_runtime_root: /Users/<user>/Projects/automation-runtime-work
+  warehouse_authoring_root: /Users/<user>/Projects/pnt-data-warehouse
+  warehouse_production_root: /Users/<user>/Production/pnt-data-warehouse-runtime
   knowledge_digest_dir: Knowledge/DIGESTS
   knowledge_transcript_dir: Knowledge/TRANSCRIPTS
   state_dir: core/state
   logs_dir: logs
+
+interactive_tools:
+  - id: codex
+    owner: machine-config
+    hosts:
+      - Laptop
+      - Mini
+    scheduled_runtime: false
+    execution:
+      deterministic_stages:
+        - local file and shell execution
+        - MCP transport and tool routing
+      llm_stages:
+        - interactive engineering and documentation work
+      llm_engine: codex
+      llm_model: gpt-5.4
+      llm_model_changeability: centrally configurable
+
+  - id: claude-cli
+    owner: machine-config
+    hosts:
+      - Laptop
+      - Mini
+    scheduled_runtime: true
+    execution:
+      deterministic_stages:
+        - CLI transport
+        - MCP routing
+        - local auth and session handling
+      llm_stages:
+        - headless automation reasoning
+        - interactive Claude Code sessions
+      llm_engine: claude_cli
+      llm_model: host-local default unless a job pins --model
+      llm_model_changeability: job-specific
 
 scheduled_jobs:
   - id: personal-poll-main
@@ -31,6 +71,15 @@ scheduled_jobs:
       - logs/poll-main.log
     state_files:
       - .deploy/last-known-good-commit
+    execution:
+      deterministic_stages:
+        - fetch origin
+        - fast-forward gate
+        - bootstrap and rollback guard
+      llm_stages: []
+      llm_engine: none
+      llm_model: none
+      llm_model_changeability: not_applicable
 
   - id: daily-digest
     enabled: true
@@ -42,6 +91,17 @@ scheduled_jobs:
       - Knowledge/DIGESTS
       - logs/daily-digest.log
     state_files: []
+    execution:
+      deterministic_stages:
+        - runtime preflight
+        - context assembly
+        - markdown write
+        - deterministic Gmail send
+      llm_stages:
+        - digest synthesis
+      llm_engine: claude_cli
+      llm_model: claude-opus-4-6
+      llm_model_changeability: code-pinned
 
   - id: monthly-goals-review
     enabled: true
@@ -55,6 +115,16 @@ scheduled_jobs:
       - logs/monthly-goals-review.log
     state_files:
       - core/state/monthly-goals-review-state.txt
+    execution:
+      deterministic_stages:
+        - prompt preparation
+        - markdown report write
+        - deterministic Gmail send
+      llm_stages:
+        - goals review synthesis
+      llm_engine: claude_cli
+      llm_model: claude-opus-4-6
+      llm_model_changeability: code-pinned
 
   - id: work-poll-main
     enabled: true
@@ -66,6 +136,15 @@ scheduled_jobs:
       - logs/poll-main.log
     state_files:
       - .deploy/last-known-good-commit
+    execution:
+      deterministic_stages:
+        - fetch origin
+        - fast-forward gate
+        - bootstrap and rollback guard
+      llm_stages: []
+      llm_engine: none
+      llm_model: none
+      llm_model_changeability: not_applicable
 
   - id: project-refresh-morning
     enabled: true
@@ -79,6 +158,17 @@ scheduled_jobs:
       - core/state/project-refresh-state.json
       - core/state/granola-sync.json
       - core/state/comms-events.jsonl
+    execution:
+      deterministic_stages:
+        - source-item collection
+        - batch orchestration
+        - state writes
+      llm_stages:
+        - project brief refresh
+        - contact extraction
+      llm_engine: claude_cli
+      llm_model: claude-opus-4-6
+      llm_model_changeability: env-configurable
 
   - id: email-triage-v2-morning
     enabled: true
@@ -94,6 +184,20 @@ scheduled_jobs:
       - core/state/email-triage-v2/outbox
       - core/state/email-triage-v2/artifacts
       - core/state/project-refresh-state.json
+    execution:
+      deterministic_stages:
+        - Gmail fetch
+        - queue orchestration
+        - policy and ranking
+        - draft routing
+        - digest rendering and send
+      llm_stages:
+        - thread enrichment
+        - draft authoring
+        - project refresh substep
+      llm_engine: claude_cli
+      llm_model: claude-opus-4-6
+      llm_model_changeability: env-configurable
 
   - id: email-triage-v2-evening
     enabled: true
@@ -109,6 +213,20 @@ scheduled_jobs:
       - core/state/email-triage-v2/outbox
       - core/state/email-triage-v2/artifacts
       - core/state/project-refresh-state.json
+    execution:
+      deterministic_stages:
+        - Gmail fetch
+        - queue orchestration
+        - policy and ranking
+        - draft routing
+        - digest rendering and send
+      llm_stages:
+        - thread enrichment
+        - draft authoring
+        - project refresh substep
+      llm_engine: claude_cli
+      llm_model: claude-opus-4-6
+      llm_model_changeability: env-configurable
 
   - id: email-monitor
     enabled: true
@@ -121,6 +239,17 @@ scheduled_jobs:
     state_files:
       - core/state/email-monitor-state.json
       - core/state/telegram-brain.json
+    execution:
+      deterministic_stages:
+        - Gmail search
+        - state update
+        - Telegram delivery
+      llm_stages:
+        - urgency triage
+        - draft decisioning
+      llm_engine: claude_cli
+      llm_model: claude-opus-4-6 for main run; haiku for failure alert path
+      llm_model_changeability: code-pinned
 
   - id: comms-ingest
     enabled: true
@@ -134,6 +263,15 @@ scheduled_jobs:
     state_files:
       - core/state/comms-ingest-state.json
       - core/state/beeper-chat-watchlist.json
+    execution:
+      deterministic_stages:
+        - communication ingest
+        - event log write
+        - state update
+      llm_stages: []
+      llm_engine: none
+      llm_model: none
+      llm_model_changeability: not_applicable
 
   - id: pnt-sync
     enabled: true
@@ -146,6 +284,16 @@ scheduled_jobs:
       - Knowledge/DIGESTS
     state_files:
       - core/state/pnt-sync-state.json
+    execution:
+      deterministic_stages:
+        - state update
+        - Notion and Gmail transport
+      llm_stages:
+        - headless sync reasoning
+        - critical-path analysis
+      llm_engine: claude_cli
+      llm_model: claude-opus-4-6 for main run; haiku for failure alert path
+      llm_model_changeability: code-pinned
 
   - id: project-refresh-evening
     enabled: true
@@ -159,6 +307,17 @@ scheduled_jobs:
       - core/state/project-refresh-state.json
       - core/state/granola-sync.json
       - core/state/comms-events.jsonl
+    execution:
+      deterministic_stages:
+        - source-item collection
+        - batch orchestration
+        - state writes
+      llm_stages:
+        - project brief refresh
+        - contact extraction
+      llm_engine: claude_cli
+      llm_model: claude-opus-4-6
+      llm_model_changeability: env-configurable
 
   - id: weekly-followup
     enabled: true
@@ -170,6 +329,15 @@ scheduled_jobs:
       - logs/weekly-followup.log
       - Knowledge/DIGESTS
     state_files: []
+    execution:
+      deterministic_stages:
+        - report write
+        - deterministic email send
+      llm_stages:
+        - weekly scan and summary generation
+      llm_engine: claude_cli
+      llm_model: claude-opus-4-6
+      llm_model_changeability: code-pinned
 
   - id: meeting-sync
     enabled: true
@@ -184,6 +352,18 @@ scheduled_jobs:
       - core/state/granola-sync.json
       - core/state/meeting-task-review.json
       - core/state/pending-tasks.md
+    execution:
+      deterministic_stages:
+        - direct Granola fetch
+        - transcript markdown writes
+        - sync state update
+        - deterministic meeting review helper
+      llm_stages:
+        - task extraction
+        - transcript interpretation
+      llm_engine: claude_cli
+      llm_model: claude-opus-4-6
+      llm_model_changeability: code-pinned
 
   - id: meeting-sync-late
     enabled: true
@@ -198,6 +378,18 @@ scheduled_jobs:
       - core/state/granola-sync.json
       - core/state/meeting-task-review.json
       - core/state/pending-tasks.md
+    execution:
+      deterministic_stages:
+        - direct Granola fetch
+        - transcript markdown writes
+        - sync state update
+        - deterministic meeting review helper
+      llm_stages:
+        - task extraction
+        - transcript interpretation
+      llm_engine: claude_cli
+      llm_model: claude-opus-4-6
+      llm_model_changeability: code-pinned
 
   - id: system-health
     enabled: true
@@ -210,6 +402,16 @@ scheduled_jobs:
       - core/state/system-health.json
     state_files:
       - core/state/system-health.json
+    execution:
+      deterministic_stages:
+        - launchd audit
+        - runtime health checks
+        - state freshness checks
+        - Telegram alert transport
+      llm_stages: []
+      llm_engine: none
+      llm_model: none
+      llm_model_changeability: not_applicable
 
   - id: transcript-backfill
     enabled: false
@@ -221,6 +423,13 @@ scheduled_jobs:
       - logs/transcript-backfill.log
     state_files:
       - core/state/transcript-backfill.json
+    execution:
+      deterministic_stages:
+        - legacy transcript backfill wrapper
+      llm_stages: []
+      llm_engine: none
+      llm_model: none
+      llm_model_changeability: not_applicable
 
 persistent_jobs:
   - id: telegram-bridge
@@ -234,6 +443,16 @@ persistent_jobs:
     state_files:
       - core/state/telegram-bridge-state.json
       - core/state/telegram-brain.json
+    execution:
+      deterministic_stages:
+        - Telegram polling
+        - batching
+        - state and log writes
+      llm_stages:
+        - freeform assistant execution
+      llm_engine: claude_cli
+      llm_model: claude-opus-4-6 by default
+      llm_model_changeability: env-configurable via TELEGRAM_BRIDGE_CLAUDE_MODEL
 
 manual_or_on_demand:
   - id: superhuman-draft-queue-writer
@@ -264,6 +483,19 @@ manual_or_on_demand:
       - core/state/email-triage-v2/outbox
       - core/state/email-triage-v2/artifacts
       - core/state/project-refresh-state.json
+    execution:
+      deterministic_stages:
+        - Gmail fetch
+        - queue orchestration
+        - policy and ranking
+        - draft routing
+      llm_stages:
+        - thread enrichment
+        - draft authoring
+        - project refresh substep
+      llm_engine: claude_cli
+      llm_model: claude-opus-4-6
+      llm_model_changeability: env-configurable
 
   - id: email-triage-v2-cloud
     infra: core/automation/triage_v2/infra/gcp

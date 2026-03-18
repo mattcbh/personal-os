@@ -2,6 +2,7 @@
 
 ## Primary Sources Of Truth
 
+- Canonical system narrative: `core/architecture/system-architecture.md`
 - System-of-record matrix and edit routing: `core/architecture/source-of-truth.md`
 - PnT runtime inventory: `core/architecture/pnt-runtime-inventory.md`
 - PnT operator runbook: `core/architecture/pnt-operator-runbook.md`
@@ -20,6 +21,6 @@
 
 When architecture changes, update these in the same commit:
 1. `core/architecture/runtime-manifest.yaml`
-2. `core/architecture/source-of-truth.md`, `core/architecture/pnt-runtime-inventory.md`, or `core/architecture/pnt-operator-runbook.md` when the control plane or PnT runtime changes
+2. `core/architecture/system-architecture.md` plus `core/architecture/source-of-truth.md`, `core/architecture/pnt-runtime-inventory.md`, or `core/architecture/pnt-operator-runbook.md` when the control plane or PnT runtime changes
 3. The corresponding subsystem README (automation/integrations/etc.)
 4. Any impacted policy file in `core/policies/`

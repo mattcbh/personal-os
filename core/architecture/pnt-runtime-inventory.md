@@ -1,28 +1,39 @@
 # PnT Runtime Inventory
 
-Observed production host at hardening time: Mac Mini (`homeserver@brain`) on 2026-03-11.
+Observed live Mini state verified on 2026-03-18.
 
 ## Runtime Identity
 
-- Production repo path: `~/Projects/pnt-data-warehouse`
-- Production host: Mac Mini only
-- Current production branch: `feature/pnt-production-baseline`
-- Branch policy after hardening:
-  - the active production branch must be explicit and human-readable
-  - it must have an upstream on GitHub before it is treated as production
-  - `main` is the long-lived integration branch, not an auto-deployed branch
-  - branch state is checked with `automation-machine-config/bin/check-pnt-runtime.sh`
+- Production host: Mini only
+- Warehouse authoring repo: `~/Projects/pnt-data-warehouse`
+- Warehouse production runtime: `~/Production/pnt-data-warehouse-runtime`
+- Observed authoring repo branch: `main`
+- Observed production runtime branch: `main`
+- Observed authoring repo commit: `7a62479`
+- Observed production runtime commit: `a4024e2`
+- Shared secret path:
+  - `~/Production/pnt-data-warehouse-runtime/.env.toast` is a symlink to `~/Projects/pnt-data-warehouse/.env.toast`
+
+## Current-State Notes
+
+- Most installed warehouse launchd jobs on the Mini run from `~/Production/pnt-data-warehouse-runtime`.
+- One installed job currently points at the authoring repo instead:
+  - `com.pnt.weekly-prime-margin` -> `~/Projects/pnt-data-warehouse/scripts/weekly_cogs_pipeline.sh`
+- `automation-machine-config/bin/check-pnt-runtime.sh` still validates `~/Projects/pnt-data-warehouse` as the primary repo path, so it does not fully describe the live production-runtime split by itself.
 
 ## Launchd Jobs
 
-| Label | Schedule | Script |
+| Label | Schedule | Runtime path |
 |---|---|---|
-| `com.pnt.daily-sync` | Daily 4:00 AM | `scripts/daily_sync.sh` |
-| `com.pnt.systematiq-monitor` | Daily 4:30 AM | `scripts/systematiq_monitor.py` |
-| `com.pnt.weekly-flash-preview` | Sunday 10:15 PM | `scripts/weekly_flash_preview.sh` |
-| `com.pnt.weekly-flash` | Sunday 10:30 PM | `scripts/weekly_flash.sh` |
-| `com.pnt.weekly-se-sync` | Sunday 4:00 AM | `scripts/weekly_se_sync.sh` |
-| `com.pnt.backfill-monitor` | 9:00 AM and 9:00 PM daily | `scripts/backfill_monitor.py` |
+| `com.pnt.daily-sync` | Daily 4:00 AM | `~/Production/pnt-data-warehouse-runtime/scripts/daily_sync.sh` |
+| `com.pnt.systematiq-monitor` | Daily 4:30 AM | `~/Production/pnt-data-warehouse-runtime/scripts/systematiq_monitor.py` |
+| `com.pnt.foot-traffic-rollup-hourly` | Hourly at `:00` | `~/Production/pnt-data-warehouse-runtime/scripts/foot_traffic_rollup_hourly.sh` |
+| `com.pnt.foot-traffic-health-check` | 8:00 AM through 10:00 PM, every 2 hours | `~/Production/pnt-data-warehouse-runtime/scripts/foot_traffic_health_check.sh` |
+| `com.pnt.weekly-flash-preview` | Sunday 10:15 PM | `~/Production/pnt-data-warehouse-runtime/scripts/weekly_flash_preview.sh` |
+| `com.pnt.weekly-flash` | Sunday 10:30 PM | `~/Production/pnt-data-warehouse-runtime/scripts/weekly_flash.sh` |
+| `com.pnt.weekly-se-sync` | Sunday 4:00 AM | `~/Production/pnt-data-warehouse-runtime/scripts/weekly_se_sync.sh` |
+| `com.pnt.weekly-prime-margin` | Wednesday 6:00 AM | `~/Projects/pnt-data-warehouse/scripts/weekly_cogs_pipeline.sh` |
+| `com.pnt.backfill-monitor` | 9:00 AM and 9:00 PM daily | `~/Production/pnt-data-warehouse-runtime/scripts/backfill_monitor.py` |
 
 ## Persistent Services
 
@@ -36,11 +47,14 @@ Observed production host at hardening time: Mac Mini (`homeserver@brain`) on 202
 
 ## Optional Service Policy
 
-These services are intentionally not all treated as mandatory:
+These services are intentionally not all treated as mandatory, and the live Mini currently does not have every installed service loaded:
 
 | Label | Current policy | Notes |
 |---|---|---|
-| `com.pnt.backfill-monitor` | Dormant unless a finite backfill campaign is active | Last observed log activity was February 2026. Re-enable only for bounded cleanup or backfill work. |
+| `com.pnt.backfill-monitor` | Installed but currently not loaded | Re-enable only for bounded cleanup or backfill work. |
+| `com.pnt.foot-traffic-rollup-hourly` | Loaded | Live on the Mini and should stay in the warehouse inventory. |
+| `com.pnt.foot-traffic-health-check` | Loaded | Live on the Mini and should stay in the warehouse inventory. |
+| `com.pnt.weekly-prime-margin` | Loaded | Currently runs from the authoring repo path, not the production runtime path. |
 | `com.pnt.cloudflared-charts` | Disabled by default | Superseded by the named Cloudflare tunnel. Keep plist for fallback only. |
 | `com.pnt.cloudflared-metabase` | Disabled by default | Superseded by the named Cloudflare tunnel. Keep plist for fallback only. |
 
@@ -56,25 +70,28 @@ These services are intentionally not all treated as mandatory:
 
 ## Secrets And Runtime-Only Material
 
-Keep these local to the Mac Mini and out of Git:
+Keep these local to the Mini and out of Git:
 
 - `~/Projects/pnt-data-warehouse/.env.toast`
-- `~/Projects/pnt-data-warehouse/data/*-session.json`
-- `~/Projects/pnt-data-warehouse/data/qbo-tokens.json`
-- `~/Projects/pnt-data-warehouse/data/*-exports/`
-- `~/Projects/pnt-data-warehouse/data/screenshots/`
+- `~/Production/pnt-data-warehouse-runtime/data/*-session.json`
+- `~/Production/pnt-data-warehouse-runtime/data/qbo-tokens.json`
+- `~/Production/pnt-data-warehouse-runtime/data/*-exports/`
+- `~/Production/pnt-data-warehouse-runtime/data/screenshots/`
 - generated weekly flash artifacts and HTML outputs in the repo root
 
 ## Operational Rules
 
 - This cluster is intentionally separate from `automation-runtime-personal` and `automation-runtime-work`.
 - Do not move it into the runtime split during this hardening pass.
-- Use `feature/pnt-production-baseline` as the pinned production branch on the Mini until a deliberate promotion to `main` happens.
-- Do not treat stale feature-branch names as stable production identifiers.
-- Use `~/Projects/automation-machine-config/bin/check-pnt-runtime.sh` from the laptop to verify:
-  - repo branch and upstream
-  - working-tree dirtiness
+- Do not assume the warehouse has a single canonical Mini runtime path until the authoring/production split is formally reconciled.
+- Do not treat older feature-branch documentation as the live production truth without checking the Mini first.
+- Use `~/Projects/automation-machine-config/bin/check-pnt-runtime.sh` from the Laptop to verify:
+  - authoring repo branch and upstream
+  - authoring repo working-tree dirtiness
   - launchd job presence
   - log path existence
-  - key runtime files
+  - key authoring-repo runtime files
+- Use direct Mini inspection as well when validating the live production runtime path:
+  - `~/Production/pnt-data-warehouse-runtime`
+  - installed warehouse plists in `~/Library/LaunchAgents/`
 - Follow `core/architecture/pnt-operator-runbook.md` for promotion, rollback, and service decisions.
