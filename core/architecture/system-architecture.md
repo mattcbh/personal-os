@@ -172,7 +172,7 @@ These decisions are approved unless and until a later architecture review change
 ### Security And Integrity Observations
 
 1. **Vault sharing model is internal-only by default.**
-   Files like `core/context/people.md` are Git-tracked in the Vault and should not be treated as safe to hand to external engineers without a separate sanitized package.
+   Files like `core/context/people.md` live in the Vault and should not be treated as safe to hand to external engineers without a separate sanitized package. Sensitive context can remain local to Obsidian without being Git-tracked.
 
 2. **Vault state topology differs by host.**
    The Mini uses symlinks for much of `core/state`, while the Laptop currently does not. This is an integrity and debugging risk if documentation assumes one model everywhere.
